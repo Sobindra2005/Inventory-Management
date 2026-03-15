@@ -1,0 +1,12 @@
+# Dev image: full source + node_modules, run npm run dev for hot reload
+FROM node:20-alpine
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1
+EXPOSE 3000
+ENV PORT=3000
+# -H 0.0.0.0 so server is reachable from host
+CMD ["npm", "run", "dev", "--", "-H", "0.0.0.0"]

@@ -11,14 +11,27 @@ class Database:
 db_instance = Database()
 
 async def connect_to_mongo():
-    try:
-        logger.info("Connecting to MongoDB...")
-        db_instance.client = AsyncIOMotorClient(settings.MONGODB_URI)
-        db_instance.db = db_instance.client[settings.MONGODB_DB_NAME]
-        logger.info("Connected to MongoDB.")
-    except Exception as e:
-        logger.error(f"Could not connect to MongoDB: {e}")
-        raise e
+    import asyncio
+    max_retries = 5
+    retry_delay = 5
+    
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"Connecting to MongoDB (Attempt {attempt + 1}/{max_retries})...")
+            db_instance.client = AsyncIOMotorClient(settings.MONGODB_URI, serverSelectionTimeoutMS=5000)
+            # Trigger a simple command to check connection
+            await db_instance.client.admin.command('ping')
+            db_instance.db = db_instance.client[settings.MONGODB_DB_NAME]
+            logger.info("Connected to MongoDB.")
+            return
+        except Exception as e:
+            logger.error(f"Attempt {attempt + 1} failed: {e}")
+            if attempt < max_retries - 1:
+                logger.info(f"Retrying in {retry_delay} seconds...")
+                await asyncio.sleep(retry_delay)
+            else:
+                logger.error("All MongoDB connection attempts failed.")
+                raise e
 
 async def close_mongo_connection():
     if db_instance.client:

@@ -71,12 +71,19 @@ export default function FileUpload() {
         body: formData,
       });
 
+      const contentType = response.headers.get("content-type") || "";
+      const isJson = contentType.includes("application/json");
+
       if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.detail || "Upload failed");
+        const body = isJson ? await response.json() : await response.text();
+        const message = isJson && body && typeof body.detail === "string"
+          ? body.detail
+          : typeof body === "string" ? body : "Upload failed";
+        throw new Error(message);
       }
 
-      const data = await response.json();
+      const data = isJson ? await response.json() : null;
+      if (!data) throw new Error("Server did not return JSON. Check that the request reaches the backend API.");
       setResult(data);
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");
