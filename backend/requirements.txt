@@ -1,0 +1,11 @@
+fastapi==0.110.0
+gunicorn==21.2.0
+uvicorn[standard]==0.29.0
+motor==3.3.2
+cloudinary==1.39.0
+paddleocr
+paddlepaddle; platform_system != 'Windows'
+paddlepaddle; platform_system == 'Windows'
+pydantic-settings==2.2.1
+python-multipart==0.0.9
+aiofiles==23.2.1
