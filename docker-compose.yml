@@ -3,28 +3,25 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: ocr_backend
-    restart: always
+    container_name: inventory_backend
+    restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      - MONGODB_URI=${MONGODB_URI:-mongodb://mongodb:27017}
-      - MONGODB_DB_NAME=ocr_db
+      - MONGODB_URI=${MONGODB_URI}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ACCESS_EXPIRATION=${JWT_ACCESS_EXPIRATION:-15m}
+      - JWT_REFRESH_EXPIRATION=${JWT_REFRESH_EXPIRATION:-29d}
       - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
       - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
       - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
-      - BACKEND_CORS_ORIGINS=["http://localhost", "http://localhost:3000"]
-      # Disable Paddle OneDNN/new executor (backup; PaddleOCR uses enable_mkldnn=False)
-      - FLAGS_use_mkldnn=0
-      - FLAGS_use_new_executor=0
-      # Skip slow HuggingFace connectivity check on startup
-      - PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True
     ports:
       - "8000:8000"
-    volumes:
-      # Mount local backend so code changes apply without rebuild; uvicorn --reload restarts on save
-      - ./backend:/app
-    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     depends_on:
-      - mongodb
+      redis:
+        condition: service_started
     networks:
       - app-network
 
@@ -32,28 +29,39 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
-    container_name: ocr_frontend
-    restart: always
+    container_name: inventory_frontend
+    restart: unless-stopped
     environment:
       - NEXT_PUBLIC_API_URL=/api/v1
-      # Backend URL for Next.js server-side rewrite (proxy /api → backend)
       - API_BACKEND_URL=http://backend:8000
     ports:
       - "3000:3000"
     volumes:
-      # Mount local frontend so code changes apply without rebuild; Next.js dev server hot-reloads
       - ./frontend:/app
-      # Keep container node_modules (don't overwrite with host)
       - frontend_node_modules:/app/node_modules
     depends_on:
       - backend
     networks:
       - app-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: inventory_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
   mongodb:
     image: mongo:latest
-    container_name: ocr_mongodb
-    restart: always
+    container_name: inventory_mongodb
+    restart: unless-stopped
+    profiles:
+      - local-db
     ports:
       - "27017:27017"
     volumes:
@@ -63,8 +71,8 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: ocr_nginx
-    restart: always
+    container_name: inventory_nginx
+    restart: unless-stopped
     ports:
       - "8888:80"
     volumes:
@@ -77,6 +85,7 @@ services:
 
 volumes:
   mongodb_data:
+  redis_data:
   frontend_node_modules:
 
 networks:

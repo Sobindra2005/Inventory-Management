@@ -1,35 +1,20 @@
-# Use an official lightweight Python image.
-# We are using python:3.10-slim. NOTE: PaddlePaddle has specific version requirements.
-FROM python:3.10-slim
+FROM python:3.11-slim
 
-# Set working directory
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
 WORKDIR /app
 
-# Install system dependencies required by PaddleOCR, OpenCV and PaddlePaddle (libgomp)
-RUN apt-get update && apt-get install -y \
-    libgl1 \
-    libglib2.0-0 \
-    libgomp1 \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Create virtual environment
-RUN python -m venv /opt/venv
-
-# Activate venv automatically by adding it to PATH
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Copy requirements file
 COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
-# Upgrade pip and install dependencies inside venv
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
 COPY . .
 
-# Expose API port
 EXPOSE 8000
 
-# Run FastAPI app using Gunicorn (now found in the venv PATH)
-CMD ["gunicorn", "main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-w", "2", "-b", "0.0.0.0:8000", "app.main:app"]
