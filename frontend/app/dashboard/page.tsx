@@ -1,23 +1,28 @@
-'use client';
-import { useState } from 'react';
+import { UserButton } from "@clerk/nextjs";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
+export default async function DashboardPage() {
+    const { userId } = await auth();
 
+    if (!userId) {
+        redirect("/login");
+    }
 
-
-export default function DashboardPage() {
-    const [loading, setLoading] = useState(false);
+    const user = await currentUser();
 
     return (
-        <div className="min-h-screen ">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <h1 className="text-3xl font-bold ">Dashboard</h1>
-                
-                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {/* Cards will go here */}
-                </div>
+        <div className="min-h-screen  dark:bg-black">
+            <div className="mx-auto flex w-full max-w-4xl items-center justify-between px-6 py-6">
+                <h1 className="text-2xl font-semibold text-black dark:text-zinc-100">Dashboard</h1>
+                <UserButton />
+            </div>
 
-                <div className="mt-8">
-                    {/* Main content area */}
+            <div className="mx-auto w-full max-w-4xl px-6 pb-8">
+                <div className="rounded-lg bg-white p-6 dark:bg-zinc-900">
+                    <p className="text-zinc-700 dark:text-zinc-300">
+                        Signed in as {user?.primaryEmailAddress?.emailAddress ?? user?.username ?? user?.id}
+                    </p>
                 </div>
             </div>
         </div>

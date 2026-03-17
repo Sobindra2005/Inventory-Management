@@ -1,18 +1,22 @@
-'use client';
+import { SignIn } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
+export default async function LoginPage() {
+    const { userId } = await auth();
 
-
-
-export default function LoginPage() {
-
+    if (userId) {
+        redirect("/dashboard");
+    }
 
     return (
-        <div className="min-h-screen flex items-center justify-center ">
-            <div className="max-w-md w-full space-y-8">
-                <h2 className="text-center text-3xl font-bold">Sign in</h2>
-                
-           
-            </div>
+        <div className="flex min-h-screen items-center justify-center p-4 dark:bg-black">
+            <SignIn
+                path="/login"
+                routing="path"
+                forceRedirectUrl="/dashboard"
+                fallbackRedirectUrl="/dashboard"
+            />
         </div>
     );
 }
