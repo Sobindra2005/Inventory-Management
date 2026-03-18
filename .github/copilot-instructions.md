@@ -15,6 +15,8 @@
 ## Frontend UI and Integration Standards
 - UI must be production-grade and visually polished, inspired by modern product patterns (e.g., Dribbble-level quality) without copying proprietary layouts/assets verbatim.
 - Prefer reusable, accessible UI patterns: responsive spacing, clear hierarchy, loading/error/empty states, and keyboard-accessible interactions.
+- Any component/section that depends on backend data must explicitly implement all three UI states: loading, error, and empty.
+- Use skeleton loaders (not spinners-only) for loading states in data-driven components and pages.
 - For all new forms, use React Hook Form + schema validation (Zod preferred).
 - For all server state, use TanStack Query (`useQuery`, `useMutation`, invalidation, optimistic updates only when safe).
 - Keep API interactions typed end-to-end; avoid `any` in request/response contracts.
@@ -32,6 +34,7 @@
   - `frontend/lib/queries/` for TanStack Query keys/hooks.
   - `frontend/lib/forms/` for form schemas, defaults, and mappers.
   - `frontend/lib/mappers/` for UI-model ↔ API-model transforms.
+- For any new backend-integrated section/component, create and maintain the related TypeScript files in these folders (contracts, API client functions, query hooks, and mappers as needed) instead of embedding data logic inline in UI components.
 - Keep page components thin: orchestration + composition only. Move business/data logic into the folders above.
 
 ## Backend Alignment for Future Integration

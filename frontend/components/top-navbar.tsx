@@ -1,6 +1,7 @@
 "use client";
 
 import { Search, Bell, Mail } from "lucide-react";
+import Link from "next/link";
 
 export default function TopNavbar() {
   return (
@@ -22,7 +23,9 @@ export default function TopNavbar() {
           <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 border-2 border-background rounded-full"></span>
         </button>
         <button className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground">
-          <Mail className="w-5 h-5" />
+          <Link href="https://mail.google.com/mail/u/0/#inbox" target="_blank" rel="noopener noreferrer">
+            <Mail className="w-5 h-5" />
+          </Link>
         </button>
       </div>
     </header>
