@@ -78,7 +78,7 @@ export default function Home() {
                     onClick={handleDashboardAccess}
                     className="bg-indigo-600 text-white px-5 py-2 sm:px-6 sm:py-2.5 rounded-full font-medium hover:bg-indigo-700 transition-shadow hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/20 transition-colors"
                   >
-                    Dashboard
+                    Sign In
                   </button>
                 </div>
               )}
