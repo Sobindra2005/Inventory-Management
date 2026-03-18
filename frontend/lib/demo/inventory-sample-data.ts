@@ -1,0 +1,65 @@
+import type { InventoryListResponse } from "@/lib/contracts/inventory";
+
+const now = "2026-03-18T10:30:00.000Z";
+
+export const inventorySampleData: InventoryListResponse = {
+  products: [
+    {
+      id: "inv-demo-1",
+      name: "Wireless Barcode Scanner",
+      barcode: "890100000001",
+      stock: 4,
+      price: 99.99,
+      category: "Hardware",
+      lowStockThreshold: 20,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "inv-demo-2",
+      name: "Thermal Receipt Paper (80mm)",
+      barcode: "890100000002",
+      stock: 38,
+      price: 4.5,
+      category: "Consumables",
+      lowStockThreshold: 30,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "inv-demo-3",
+      name: "POS Drawer Lock",
+      barcode: "890100000003",
+      stock: 2,
+      price: 14.25,
+      category: "Hardware",
+      lowStockThreshold: 10,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "inv-demo-4",
+      name: "Label Rolls - Premium",
+      barcode: "890100000004",
+      stock: 80,
+      price: 2.75,
+      category: "Consumables",
+      lowStockThreshold: 25,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "inv-demo-5",
+      name: "A4 Printing Paper Bundle",
+      barcode: "890100000005",
+      stock: 16,
+      price: 6.4,
+      category: "Office Supplies",
+      lowStockThreshold: 20,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ],
+  totalCount: 5,
+  categories: ["Hardware", "Consumables", "Office Supplies"],
+};

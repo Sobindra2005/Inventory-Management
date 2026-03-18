@@ -74,3 +74,43 @@ body {
   font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+.dashboard-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted-foreground) transparent;
+}
+
+.dashboard-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: transparent;
+}
+
+.dashboard-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.dashboard-scrollbar::-webkit-scrollbar-track-piece {
+  background: transparent !important;
+}
+
+.dashboard-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.dashboard-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--foreground);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.dashboard-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+html {
+  scrollbar-gutter: stable;
+}

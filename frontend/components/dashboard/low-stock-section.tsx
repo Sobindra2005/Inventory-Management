@@ -53,7 +53,7 @@ export const LowStockSection: React.FC<LowStockSectionProps> = ({
       </div>
 
       {/* Products List */}
-      <div className="space-y-3 max-h-96 overflow-y-auto">
+      <div className="dashboard-scrollbar space-y-3 max-h-96 overflow-y-auto [scrollbar-gutter:stable]">
         {products.map((product) => {
           const stockPercentage = (product.currentStock / product.minThreshold) * 100;
           const isCritical = stockPercentage < 25;

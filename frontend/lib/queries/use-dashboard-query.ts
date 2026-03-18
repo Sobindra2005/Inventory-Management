@@ -6,6 +6,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dashboardApi } from '../api/dashboard';
 import type { DashboardData, LowStockResponse, GeneratedReport } from '../contracts/dashboard';
+import { isDashboardDemoFallbackEnabled } from '@/lib/config/dashboard-demo';
+import {
+  dashboardLowStockSampleData,
+  dashboardReportsSampleData,
+  dashboardSampleData,
+} from '@/lib/demo/dashboard-sample-data';
 
 export const dashboardQueryKeys = {
   all: ['dashboard'] as const,
@@ -15,10 +21,48 @@ export const dashboardQueryKeys = {
   reportDetail: (id: string) => [...dashboardQueryKeys.reports(), id] as const,
 };
 
+const getLowStockSampleForLimit = (limit: number): LowStockResponse => {
+  const products = dashboardLowStockSampleData.products.slice(0, limit);
+  const criticalCount = products.filter(
+    (product) => (product.currentStock / product.minThreshold) * 100 < 25
+  ).length;
+
+  return {
+    products,
+    totalCount: dashboardLowStockSampleData.totalCount,
+    criticalCount,
+  };
+};
+
+const withDashboardFallback = async <T>(
+  request: () => Promise<T>,
+  fallback: T,
+  source: string
+): Promise<T> => {
+  try {
+    return await request();
+  } catch (error) {
+    if (!isDashboardDemoFallbackEnabled) {
+      throw error;
+    }
+
+    console.warn(
+      `[dashboard-demo-fallback] Using sample data for ${source}. Set NEXT_PUBLIC_DASHBOARD_DEMO_FALLBACK=false to disable.`,
+      error
+    );
+    return fallback;
+  }
+};
+
 export const useDashboardData = () => {
   return useQuery<DashboardData>({
     queryKey: dashboardQueryKeys.all,
-    queryFn: dashboardApi.fetchDashboardData,
+    queryFn: () =>
+      withDashboardFallback(
+        dashboardApi.fetchDashboardData,
+        dashboardSampleData,
+        'dashboard overview'
+      ),
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 10, // 10 minutes
   });
@@ -27,7 +71,12 @@ export const useDashboardData = () => {
 export const useLowStockProducts = (limit: number = 10) => {
   return useQuery<LowStockResponse>({
     queryKey: dashboardQueryKeys.lowStock(),
-    queryFn: () => dashboardApi.fetchLowStockProducts(limit),
+    queryFn: () =>
+      withDashboardFallback(
+        () => dashboardApi.fetchLowStockProducts(limit),
+        getLowStockSampleForLimit(limit),
+        'low stock list'
+      ),
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 10,
   });
@@ -36,7 +85,12 @@ export const useLowStockProducts = (limit: number = 10) => {
 export const useReports = (limit: number = 10) => {
   return useQuery<GeneratedReport[]>({
     queryKey: dashboardQueryKeys.reports(),
-    queryFn: () => dashboardApi.fetchReports(limit),
+    queryFn: () =>
+      withDashboardFallback(
+        () => dashboardApi.fetchReports(limit),
+        dashboardReportsSampleData.slice(0, limit),
+        'reports list'
+      ),
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 15,
   });

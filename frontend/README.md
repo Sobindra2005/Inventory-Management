@@ -1,5 +1,53 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Dashboard Demo Fallback
+
+The dashboard is configured to automatically show sample data when API requests fail (demo-safe behavior).
+
+- Default behavior: fallback is enabled.
+- Toggle: `NEXT_PUBLIC_DASHBOARD_DEMO_FALLBACK`
+- File with sample data: `lib/demo/dashboard-sample-data.ts`
+- Fallback toggle config: `lib/config/dashboard-demo.ts`
+
+### Disable fallback (show real API errors instead)
+
+Create `frontend/.env.local` with:
+
+```bash
+NEXT_PUBLIC_DASHBOARD_DEMO_FALLBACK=false
+```
+
+Restart the dev server after changing env values.
+
+### Re-enable fallback
+
+Set:
+
+```bash
+NEXT_PUBLIC_DASHBOARD_DEMO_FALLBACK=true
+```
+
+or remove the variable entirely (enabled by default).
+
+## Inventory Demo Fallback
+
+Inventory page is also configured to show sample data when fetch fails.
+
+- Default behavior: fallback is enabled.
+- Toggle: `NEXT_PUBLIC_INVENTORY_DEMO_FALLBACK`
+- File with sample data: `lib/demo/inventory-sample-data.ts`
+- Fallback toggle config: `lib/config/inventory-demo.ts`
+
+### Disable inventory fallback
+
+In `frontend/.env.local`:
+
+```bash
+NEXT_PUBLIC_INVENTORY_DEMO_FALLBACK=false
+```
+
+Restart dev server after changing env values.
+
 ## Getting Started
 
 First, run the development server:
