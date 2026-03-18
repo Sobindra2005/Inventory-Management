@@ -111,6 +111,6 @@ body {
   background: transparent;
 }
 
-html {
+.gutter {
   scrollbar-gutter: stable;
 }

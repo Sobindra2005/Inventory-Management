@@ -16,7 +16,7 @@ export default function DashboardLayout({
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <TopNavbar />
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className="gutter flex-1 p-8 overflow-y-auto">
           {children}
         </main>
       </div>
