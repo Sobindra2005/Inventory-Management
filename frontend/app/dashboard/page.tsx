@@ -1,5 +1,4 @@
-import { UserButton } from "@clerk/nextjs";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
@@ -9,22 +8,15 @@ export default async function DashboardPage() {
         redirect("/");
     }
 
-    const user = await currentUser();
-
     return (
-        <div className="min-h-screen bg-background">
-            <div className="mx-auto flex w-full max-w-4xl items-center justify-between px-6 py-6">
-                <h1 className="text-2xl font-semibold text-foreground">Dashboard</h1>
-                <UserButton />
+        <div className="flex flex-col gap-6">
+            <h1 className="text-3xl font-extrabold tracking-tight">Dashboard</h1>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-48 bg-card border border-border rounded-2xl shadow-sm animate-in fade-in zoom-in duration-500" style={{ animationDelay: `${i * 100}ms` }}></div>
+                ))}
             </div>
-
-            <div className="mx-auto w-full max-w-4xl px-6 pb-8">
-                <div className="rounded-lg bg-card p-6 border border-border">
-                    <p className="text-muted-foreground">
-                        Signed in as {user?.primaryEmailAddress?.emailAddress ?? user?.username ?? user?.id}
-                    </p>
-                </div>
-            </div>
+            <div className="h-96 bg-card border border-border rounded-2xl shadow-sm animate-in fade-in zoom-in duration-700"></div>
         </div>
     );
 }
