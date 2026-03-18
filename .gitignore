@@ -4,6 +4,8 @@ venv/
 env/
 .env
 
+.github
+
 # Build outputs
 dist/
 build/
