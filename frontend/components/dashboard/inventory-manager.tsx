@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { motion, AnimatePresence } from "motion/react";
+import { Search, ChevronDown } from "lucide-react";
 import {
     addInventoryProductDefaults,
     addInventoryProductSchema,
@@ -18,6 +20,92 @@ import {
 } from "@/lib/queries/use-inventory-query";
 
 const formatPrice = (value: number) => `$${value.toFixed(2)}`;
+
+interface CustomSelectProps {
+    value: string;
+    onChange: (value: string) => void;
+    options: string[];
+    placeholder?: string;
+    label?: string;
+}
+
+const CustomSelect: React.FC<CustomSelectProps> = ({
+    value,
+    onChange,
+    options,
+    placeholder = "Select...",
+    label,
+}) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const displayLabel =
+        value === "all" ? "All Categories" : options.find((opt) => opt === value) || placeholder;
+
+    return (
+        <div className="relative" ref={dropdownRef}>
+            {label && (
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    {label}
+                </label>
+            )}
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full h-10 px-4 bg-muted/30 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all text-left flex items-center justify-between hover:bg-muted/50 text-foreground"
+            >
+                <span className="text-sm">{displayLabel}</span>
+                <ChevronDown
+                    className="w-4 h-4 text-muted-foreground transition-transform"
+                    style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+                />
+            </button>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-10 overflow-hidden"
+                    >
+                        {options.map((option) => (
+                            <button
+                                key={option}
+                                type="button"
+                                onClick={() => {
+                                    onChange(option);
+                                    setIsOpen(false);
+                                }}
+                                className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                                    value === option
+                                        ? "bg-primary/10 text-primary font-medium"
+                                        : "text-foreground hover:bg-accent"
+                                }`}
+                            >
+                                {option === "all" ? "All Categories" : option}
+                            </button>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
 
 export const InventoryManager: React.FC = () => {
     const inventoryQuery = useInventoryList();
@@ -204,178 +292,190 @@ export const InventoryManager: React.FC = () => {
             )}
 
             <div className="rounded-2xl border border-border bg-card text-card-foreground p-4 md:p-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                    <div className="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        <div className="lg:col-span-1">
-                            <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                <div className="flex flex-col gap-3">
+                    {/* Search and Filters Row */}
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-3">
+                        {/* Search Input */}
+                        <div className="flex-1">
+                            <label className="mb-2 block text-xs font-medium text-muted-foreground">
                                 Search
                             </label>
-                            <input
-                                value={search}
-                                onChange={(event) => setSearch(event.target.value)}
-                                placeholder="Product name or barcode"
-                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                    <Search className="w-4 h-4 text-muted-foreground" />
+                                </div>
+                                <input
+                                    value={search}
+                                    onChange={(event) => setSearch(event.target.value)}
+                                    placeholder="Product name or barcode"
+                                    className="w-full h-10 pl-10 pr-4 bg-muted/30 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Category Select */}
+                        <div className="w-full lg:w-48">
+                            <CustomSelect
+                                label="Category"
+                                value={selectedCategory}
+                                onChange={setSelectedCategory}
+                                options={categories}
                             />
                         </div>
+                    </div>
 
-                        <div>
-                            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                                Category
-                            </label>
-                            <select
-                                value={selectedCategory}
-                                onChange={(event) => setSelectedCategory(event.target.value)}
-                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
-                            >
-                                {categories.map((category) => (
-                                    <option key={category} value={category}>
-                                        {category === "all" ? "All Categories" : category}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="flex h-fit items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 ">
+                    {/* Low Stock and Add Button Row */}
+                    <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/30 px-4 py-2.5 h-10">
                             <input
                                 id="low-stock-only"
                                 type="checkbox"
                                 checked={lowStockOnly}
                                 onChange={(event) => setLowStockOnly(event.target.checked)}
-                                className="h-4 w-4 accent-primary border border-white"
+                                className="h-4 w-4 accent-primary cursor-pointer"
                             />
-                            <label htmlFor="low-stock-only" className="text-sm text-foreground">
+                            <label htmlFor="low-stock-only" className="text-sm text-foreground cursor-pointer select-none">
                                 Low stock only
                             </label>
                         </div>
-                    </div>
 
-                    <button
-                        type="button"
-                        onClick={() => {
-                            if (isFormOpen && !editingProductId) {
-                                closeForm();
-                            } else {
-                                reset(addInventoryProductDefaults);
-                                setEditingProductId(null);
-                                setIsFormOpen(true);
-                            }
-                        }}
-                        className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
-                    >
-                        Add
-                    </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (isFormOpen && !editingProductId) {
+                                    closeForm();
+                                } else {
+                                    reset(addInventoryProductDefaults);
+                                    setEditingProductId(null);
+                                    setIsFormOpen(true);
+                                }
+                            }}
+                            className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity h-10"
+                        >
+                            Add Product
+                        </button>
+                    </div>
                 </div>
 
-                {isFormOpen && (
-                    <form
-                        onSubmit={handleSubmit(onAddOrEditSubmit)}
-                        className="mt-5 grid gap-3 border-t border-border pt-5 md:grid-cols-2 lg:grid-cols-3"
-                    >
-                        <div>
-                            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                                Product Name
-                            </label>
-                            <input
-                                {...register("name")}
-                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
-                            />
-                            {errors.name && (
-                                <p className="mt-1 text-xs text-destructive">{errors.name.message}</p>
-                            )}
-                        </div>
+                {/* Form with Animation */}
+                <AnimatePresence>
+                    {isFormOpen && (
+                        <motion.form
+                            onSubmit={handleSubmit(onAddOrEditSubmit)}
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="mt-5 overflow-hidden"
+                        >
+                            <div className="grid gap-3 border-t border-border pt-5 md:grid-cols-2 lg:grid-cols-3">
+                                <div>
+                                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                                        Product Name
+                                    </label>
+                                    <input
+                                        {...register("name")}
+                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                                    />
+                                    {errors.name && (
+                                        <p className="mt-1 text-xs text-destructive">{errors.name.message}</p>
+                                    )}
+                                </div>
 
-                        <div>
-                            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                                Barcode
-                            </label>
-                            <input
-                                {...register("barcode")}
-                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
-                            />
-                            {errors.barcode && (
-                                <p className="mt-1 text-xs text-destructive">{errors.barcode.message}</p>
-                            )}
-                        </div>
+                                <div>
+                                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                                        Barcode
+                                    </label>
+                                    <input
+                                        {...register("barcode")}
+                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                                    />
+                                    {errors.barcode && (
+                                        <p className="mt-1 text-xs text-destructive">{errors.barcode.message}</p>
+                                    )}
+                                </div>
 
-                        <div>
-                            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                                Category
-                            </label>
-                            <input
-                                {...register("category")}
-                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
-                            />
-                            {errors.category && (
-                                <p className="mt-1 text-xs text-destructive">{errors.category.message}</p>
-                            )}
-                        </div>
+                                <div>
+                                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                                        Category
+                                    </label>
+                                    <input
+                                        {...register("category")}
+                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                                    />
+                                    {errors.category && (
+                                        <p className="mt-1 text-xs text-destructive">{errors.category.message}</p>
+                                    )}
+                                </div>
 
-                        <div>
-                            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                                Stock
-                            </label>
-                            <input
-                                type="number"
-                                min={0}
-                                {...register("stock", { valueAsNumber: true })}
-                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
-                            />
-                            {errors.stock && (
-                                <p className="mt-1 text-xs text-destructive">{errors.stock.message}</p>
-                            )}
-                        </div>
+                                <div>
+                                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                                        Stock
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        {...register("stock", { valueAsNumber: true })}
+                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                                    />
+                                    {errors.stock && (
+                                        <p className="mt-1 text-xs text-destructive">{errors.stock.message}</p>
+                                    )}
+                                </div>
 
-                        <div>
-                            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                                Price
-                            </label>
-                            <input
-                                type="number"
-                                step="0.01"
-                                min={0}
-                                {...register("price", { valueAsNumber: true })}
-                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
-                            />
-                            {errors.price && (
-                                <p className="mt-1 text-xs text-destructive">{errors.price.message}</p>
-                            )}
-                        </div>
+                                <div>
+                                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                                        Price
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min={0}
+                                        {...register("price", { valueAsNumber: true })}
+                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                                    />
+                                    {errors.price && (
+                                        <p className="mt-1 text-xs text-destructive">{errors.price.message}</p>
+                                    )}
+                                </div>
 
-                        <div>
-                            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                                Low Stock Threshold
-                            </label>
-                            <input
-                                type="number"
-                                min={1}
-                                {...register("lowStockThreshold", { valueAsNumber: true })}
-                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
-                            />
-                            {errors.lowStockThreshold && (
-                                <p className="mt-1 text-xs text-destructive">
-                                    {errors.lowStockThreshold.message}
-                                </p>
-                            )}
-                        </div>
+                                <div>
+                                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                                        Low Stock Threshold
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        {...register("lowStockThreshold", { valueAsNumber: true })}
+                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                                    />
+                                    {errors.lowStockThreshold && (
+                                        <p className="mt-1 text-xs text-destructive">
+                                            {errors.lowStockThreshold.message}
+                                        </p>
+                                    )}
+                                </div>
 
-                        <div className="md:col-span-2 lg:col-span-3 flex items-center justify-end gap-2">
-                            <button
-                                type="button"
-                                onClick={closeForm}
-                                className="rounded-lg border border-border bg-background px-4 py-2 text-sm hover:bg-accent"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={isSubmitting || addMutation.isPending || updateMutation.isPending}
-                                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
-                            >
-                                {editingProductId ? "Save Changes" : "Add Product"}
-                            </button>
-                        </div>
-                    </form>
-                )}
+                                <div className="md:col-span-2 lg:col-span-3 flex items-center justify-end gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={closeForm}
+                                        className="rounded-lg border border-border bg-background px-4 py-2 text-sm hover:bg-accent transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmitting || addMutation.isPending || updateMutation.isPending}
+                                        className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60 transition-opacity"
+                                    >
+                                        {editingProductId ? "Save Changes" : "Add Product"}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.form>
+                    )}
+                </AnimatePresence>
             </div>
 
             <div className="rounded-2xl border border-border bg-card text-card-foreground p-4 md:p-6">
