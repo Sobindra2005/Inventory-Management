@@ -26,6 +26,8 @@
 - Define explicit TypeScript DTO/contracts for payloads and responses.
 - Always include stable identifiers and timestamps in contracts when relevant (`id`, `createdAt`, `updatedAt`).
 - Normalize nullable and optional fields deliberately; do not rely on implicit undefined behavior.
+- For demo/sample/mock data, always use strict TypeScript types from the same DTO/contracts (no untyped literals or `any`) so mock data shape remains backend-ready.
+- Keep sample data field names, nesting, and value formats aligned with the intended backend schema to minimize future integration changes.
 
 ## TypeScript File Organization (Required for New Frontend Features)
 - Place production-grade TypeScript integrations in dedicated folders:
