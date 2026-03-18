@@ -1,24 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { SignIn, useAuth } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { useTheme } from "next-themes";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { X, Package, Receipt, BarChart3, ArrowRight, Sun, Moon } from "lucide-react";
 
 export default function Home() {
   const { userId, isLoaded } = useAuth();
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
+  const router = useRouter();
   const [showSignIn, setShowSignIn] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
-  // Avoid hydration mismatch
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  if (!isLoaded) return null;
 
-  if (!isLoaded || !mounted) return null;
+  const handleDashboardAccess = () => {
+    if (userId) {
+      router.push("/dashboard");
+      return;
+    }
+
+    setShowSignIn(true);
+  };
 
   const features = [
     {
@@ -38,16 +43,6 @@ export default function Home() {
     },
   ];
 
-  const ThemeToggle = () => (
-    <button
-      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-      className="p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-      aria-label="Toggle theme"
-    >
-      {resolvedTheme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-    </button>
-  );
-
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 selection:bg-indigo-100 dark:selection:bg-indigo-900/30 selection:text-indigo-900 dark:selection:text-indigo-200 transition-colors duration-300">
       {/* Navigation */}
@@ -62,7 +57,13 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-3 sm:gap-6">
-              <ThemeToggle />
+              <button
+                onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+                className="p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                aria-label="Toggle theme"
+              >
+                {resolvedTheme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
 
               {userId ? (
                 <Link
@@ -74,7 +75,7 @@ export default function Home() {
               ) : (
                 <div className="flex items-center gap-3 sm:gap-4">
                   <button
-                    onClick={() => setShowSignIn(true)}
+                    onClick={handleDashboardAccess}
                     className="bg-indigo-600 text-white px-5 py-2 sm:px-6 sm:py-2.5 rounded-full font-medium hover:bg-indigo-700 transition-shadow hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/20 transition-colors"
                   >
                     Dashboard
@@ -102,7 +103,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
-                onClick={() => setShowSignIn(true)}
+                onClick={handleDashboardAccess}
                 className="w-full sm:w-auto bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-950 px-8 py-4 rounded-full font-semibold text-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-all flex items-center justify-center gap-2 group"
               >
                 Start for free
@@ -172,7 +173,7 @@ export default function Home() {
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">Ready to streamline your business?</h2>
             <p className="text-indigo-100 mb-10 text-lg max-w-xl mx-auto">Join thousands of businesses that trust StockFlow for their inventory and billing needs.</p>
             <button
-              onClick={() => setShowSignIn(true)}
+              onClick={handleDashboardAccess}
               className="bg-white text-indigo-600 dark:text-indigo-700 px-10 py-4 rounded-full font-bold text-lg hover:bg-zinc-50 transition-colors shadow-xl"
             >
               Get Started Now
@@ -200,7 +201,7 @@ export default function Home() {
       </footer>
 
       {/* Sign-In Modal Overlay */}
-      {showSignIn && (
+      {showSignIn && !userId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-zinc-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity"
