@@ -44,6 +44,25 @@ NEXT_PUBLIC_INVENTORY_DEMO_FALLBACK=false
 
 Restart dev server after changing env values.
 
+## Customers Demo Fallback
+
+Customers credit tracking page is configured to show sample data when fetch fails.
+
+- Default behavior: fallback is enabled.
+- Toggle: `NEXT_PUBLIC_CUSTOMERS_DEMO_FALLBACK`
+- File with sample data: `lib/demo/customers-sample-data.ts`
+- Fallback toggle config: `lib/config/customers-demo.ts`
+
+### Disable customers fallback
+
+In `frontend/.env.local`:
+
+```bash
+NEXT_PUBLIC_CUSTOMERS_DEMO_FALLBACK=false
+```
+
+Restart dev server after changing env values.
+
 ## Sales & Billing Demo Fallback
 
 Sales & Billing page is configured to show sample data when API requests fail.

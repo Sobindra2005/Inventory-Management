@@ -19,7 +19,7 @@ import {
     useUpdateInventoryStock,
 } from "@/lib/queries/use-inventory-query";
 
-const formatPrice = (value: number) => `$${value.toFixed(2)}`;
+const formatPrice = (value: number) => `Rs.${value.toFixed(2)}`;
 
 interface CustomSelectProps {
     value: string;
