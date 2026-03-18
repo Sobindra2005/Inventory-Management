@@ -76,7 +76,7 @@ export default function Home() {
                 <div className="flex items-center gap-3 sm:gap-4">
                   <button
                     onClick={handleDashboardAccess}
-                    className="bg-indigo-600 text-white px-5 py-2 sm:px-6 sm:py-2.5 rounded-full font-medium hover:bg-indigo-700 transition-shadow hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/20 transition-colors"
+                    className="bg-indigo-600 text-white px-5 py-2 sm:px-6 sm:py-2.5 rounded-full font-medium hover:bg-indigo-700 transition-colors hover:shadow-lg hover:shadow-indigo-200 dark:hover:shadow-indigo-900/20 transition-colors"
                   >
                     Sign In
                   </button>
