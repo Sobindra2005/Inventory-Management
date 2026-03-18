@@ -68,7 +68,7 @@ export const GenerateReportForm: React.FC<GenerateReportFormProps> = ({
             type="date"
             {...register('startDate')}
             disabled={isLoading_}
-            className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:bg-muted disabled:text-muted-foreground transition-all"
+            className="w-full h-10 px-4 rounded-xl border border-border bg-muted/30 text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:bg-muted disabled:text-muted-foreground transition-all"
           />
           {errors.startDate && (
             <p className="mt-1 text-sm text-red-600">{errors.startDate.message}</p>
@@ -83,7 +83,7 @@ export const GenerateReportForm: React.FC<GenerateReportFormProps> = ({
             type="date"
             {...register('endDate')}
             disabled={isLoading_}
-            className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:bg-muted disabled:text-muted-foreground transition-all"
+            className="w-full h-10 px-4 rounded-xl border border-border bg-muted/30 text-foreground focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:bg-muted disabled:text-muted-foreground transition-all"
           />
           {errors.endDate && (
             <p className="mt-1 text-sm text-red-600">{errors.endDate.message}</p>

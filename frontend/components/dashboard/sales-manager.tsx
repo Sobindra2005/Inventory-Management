@@ -378,7 +378,7 @@ export const SalesManager: React.FC = () => {
                                 onChange={(e) => setDiscount(Math.max(0, parseFloat(e.target.value) || 0))}
                                 min={0}
                                 max={cartTotals.subtotal}
-                                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                                className="w-full h-10 rounded-xl border border-border bg-muted/30 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                             />
                         </div>
 
@@ -397,7 +397,7 @@ export const SalesManager: React.FC = () => {
                                         setPaymentMethod("cash");
                                         setSelectedCustomerId(null);
                                     }}
-                                    className={`rounded-lg py-2 px-3 text-sm font-medium transition-colors border ${paymentMethod === "cash"
+                                    className={`rounded-lg py-2 px-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 border ${paymentMethod === "cash"
                                             ? "border-primary bg-primary/10 text-primary"
                                             : "border-border bg-background hover:bg-accent"
                                         }`}
@@ -406,7 +406,7 @@ export const SalesManager: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => setPaymentMethod("credit")}
-                                    className={`rounded-lg py-2 px-3 text-sm font-medium transition-colors border ${paymentMethod === "credit"
+                                    className={`rounded-lg py-2 px-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 border ${paymentMethod === "credit"
                                             ? "border-primary bg-primary/10 text-primary"
                                             : "border-border bg-background hover:bg-accent"
                                         }`}
