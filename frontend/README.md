@@ -33,10 +33,6 @@ or remove the variable entirely (enabled by default).
 
 Inventory page is also configured to show sample data when fetch fails.
 
-- Default behavior: fallback is enabled.
-- Toggle: `NEXT_PUBLIC_INVENTORY_DEMO_FALLBACK`
-- File with sample data: `lib/demo/inventory-sample-data.ts`
-- Fallback toggle config: `lib/config/inventory-demo.ts`
 
 ### Disable inventory fallback
 
@@ -48,6 +44,24 @@ NEXT_PUBLIC_INVENTORY_DEMO_FALLBACK=false
 
 Restart dev server after changing env values.
 
+## Sales & Billing Demo Fallback
+
+Sales & Billing page is configured to show sample data when API requests fail.
+
+- Default behavior: fallback is enabled.
+- Toggle: `NEXT_PUBLIC_SALES_DEMO_FALLBACK`
+- File with sample data: `lib/demo/sales-sample-data.ts`
+- Fallback toggle config: `lib/config/sales-demo.ts`
+
+### Disable sales fallback
+
+In `frontend/.env.local`:
+
+```bash
+NEXT_PUBLIC_SALES_DEMO_FALLBACK=false
+```
+
+Restart dev server after changing env values.
 ## Getting Started
 
 First, run the development server:
