@@ -8,6 +8,24 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { X, Package, Receipt, BarChart3, ArrowRight, Sun, Moon } from "lucide-react";
 
+const features = [
+  {
+    title: "Real-time Inventory",
+    description: "Track stock levels across multiple locations with instant updates and low-stock alerts.",
+    icon: <Package className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />,
+  },
+  {
+    title: "Precision Billing",
+    description: "Generate professional invoices in seconds. Manage payments and taxes with ease.",
+    icon: <Receipt className="w-6 h-6 text-emerald-500 dark:text-emerald-400" />,
+  },
+  {
+    title: "Advanced Analytics",
+    description: "Gain deep insights into your sales performance and inventory turnover with visual reports.",
+    icon: <BarChart3 className="w-6 h-6 text-amber-500 dark:text-amber-400" />,
+  },
+];
+
 export default function Home() {
   const { userId, isLoaded } = useAuth();
   const { setTheme, resolvedTheme } = useTheme();
@@ -25,44 +43,26 @@ export default function Home() {
     setShowSignIn(true);
   };
 
-  const features = [
-    {
-      title: "Real-time Inventory",
-      description: "Track stock levels across multiple locations with instant updates and low-stock alerts.",
-      icon: <Package className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />,
-    },
-    {
-      title: "Precision Billing",
-      description: "Generate professional invoices in seconds. Manage payments and taxes with ease.",
-      icon: <Receipt className="w-6 h-6 text-emerald-500 dark:text-emerald-400" />,
-    },
-    {
-      title: "Advanced Analytics",
-      description: "Gain deep insights into your sales performance and inventory turnover with visual reports.",
-      icon: <BarChart3 className="w-6 h-6 text-amber-500 dark:text-amber-400" />,
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 selection:bg-indigo-100 dark:selection:bg-indigo-900/30 selection:text-indigo-900 dark:selection:text-indigo-200 transition-colors duration-300">
+    <div className="min-h-screen bg-background text-foreground selection:bg-indigo-100 dark:selection:bg-indigo-900/30 selection:text-indigo-900 dark:selection:text-indigo-200 transition-colors duration-300">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-100 dark:border-zinc-800 transition-colors">
+      <nav className="fixed top-0 w-full z-40 bg-background/80 backdrop-blur-md border-b border-border transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
                 <Package className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">StockFlow</span>
+              <span className="text-xl font-bold tracking-tight text-foreground">StockFlow</span>
             </div>
 
             <div className="flex items-center gap-3 sm:gap-6">
               <button
                 onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-                className="p-2 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                className="p-2 rounded-full bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                 aria-label="Toggle theme"
               >
-                {resolvedTheme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                {resolvedTheme === "dark" ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5" />}
               </button>
 
               {userId ? (
@@ -95,10 +95,10 @@ export default function Home() {
             <div className="absolute -top-24 -left-20 w-64 h-64 bg-indigo-100 dark:bg-indigo-900/20 rounded-full blur-3xl opacity-50 -z-10 animate-pulse"></div>
             <div className="absolute -bottom-24 -right-20 w-64 h-64 bg-emerald-50 dark:bg-emerald-900/10 rounded-full blur-3xl opacity-50 -z-10 animate-pulse" style={{ animationDelay: '1s' }}></div>
 
-            <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 mb-6 leading-[1.1]">
+            <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight text-foreground mb-6 leading-[1.1]">
               Inventory management <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-indigo-400 dark:from-indigo-400 dark:to-indigo-300">reimagined.</span>
             </h1>
-            <p className="text-xl text-zinc-600 dark:text-zinc-400 mb-10 leading-relaxed font-light">
+            <p className="text-xl text-muted-foreground mb-10 leading-relaxed font-light">
               The ultimate toolkit for modern businesses. Effortlessly track inventory, generate professional bills, and scale your operations with StockFlow.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -121,20 +121,20 @@ export default function Home() {
           {/* Hero Image / UI Preview */}
           <div className="mt-20 relative max-w-5xl mx-auto group">
             <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-2xl blur opacity-10 dark:opacity-20 group-hover:opacity-20 dark:group-hover:opacity-30 transition duration-1000 group-hover:duration-200"></div>
-            <div className="relative bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-2xl overflow-hidden aspect-video flex items-center justify-center">
+            <div className="relative bg-zinc-50 dark:bg-zinc-900 border border-border rounded-2xl shadow-2xl overflow-hidden aspect-video flex items-center justify-center">
               {/* Simulated Dashboard UI */}
               <div className="w-full h-full p-8 flex flex-col gap-6">
                 <div className="h-8 w-1/4 bg-zinc-200 dark:bg-zinc-800 rounded-md animate-pulse"></div>
                 <div className="grid grid-cols-3 gap-6">
-                  <div className="h-32 bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-800 shadow-sm animate-pulse"></div>
-                  <div className="h-32 bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-800 shadow-sm animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="h-32 bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-800 shadow-sm animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                  <div className="h-32 bg-white dark:bg-zinc-800/50 rounded-xl border border-border shadow-sm animate-pulse"></div>
+                  <div className="h-32 bg-white dark:bg-zinc-800/50 rounded-xl border border-border shadow-sm animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="h-32 bg-white dark:bg-zinc-800/50 rounded-xl border border-border shadow-sm animate-pulse" style={{ animationDelay: '0.4s' }}></div>
                 </div>
-                <div className="flex-1 bg-white dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-800 shadow-sm animate-pulse" style={{ animationDelay: '0.6s' }}></div>
+                <div className="flex-1 bg-white dark:bg-zinc-800/50 rounded-xl border border-border shadow-sm animate-pulse" style={{ animationDelay: '0.6s' }}></div>
               </div>
               {/* Overlay text */}
               <div className="absolute inset-0 flex items-center justify-center bg-white/10 dark:bg-black/20 backdrop-blur-[2px]">
-                <span className="bg-white/90 dark:bg-zinc-800/90 px-6 py-2 rounded-full text-sm font-medium border border-white/50 dark:border-zinc-700 shadow-lg text-zinc-900 dark:text-zinc-100">Coming soon: Smart AI Reordering</span>
+                <span className="bg-white/90 dark:bg-zinc-800/90 px-6 py-2 rounded-full text-sm font-medium border border-border shadow-lg text-zinc-900 dark:text-zinc-100">Coming soon: Smart AI Reordering</span>
               </div>
             </div>
           </div>
@@ -142,21 +142,21 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 bg-zinc-50 dark:bg-zinc-900/50 border-y border-zinc-100 dark:border-zinc-800">
+      <section id="features" className="py-24 bg-muted/50 border-y border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">Powerful features for high-growth teams</h2>
-            <p className="text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">Everything you need to manage your shop, warehouse, or e-commerce business in one place.</p>
+            <h2 className="text-3xl font-bold text-foreground mb-4">Powerful features for high-growth teams</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">Everything you need to manage your shop, warehouse, or e-commerce business in one place.</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {features.map((feature, index) => (
-              <div key={index} className="bg-white dark:bg-zinc-900 p-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-indigo-500 transition-colors group">
-                <div className="w-12 h-12 bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-zinc-100 dark:border-zinc-800 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <div key={index} className="bg-card p-8 rounded-2xl border border-border hover:border-indigo-300 dark:hover:border-indigo-500 transition-colors group">
+                <div className="w-12 h-12 bg-card rounded-xl shadow-sm border border-border flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   {feature.icon}
                 </div>
-                <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-3">{feature.title}</h3>
-                <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed">{feature.description}</p>
+                <h3 className="text-xl font-bold text-foreground mb-3">{feature.title}</h3>
+                <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -183,17 +183,17 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-zinc-100 dark:border-zinc-800">
+      <footer className="py-12 border-t border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-zinc-500 dark:text-zinc-400">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Package className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span className="font-semibold text-zinc-900 dark:text-zinc-50">StockFlow</span>
+              <span className="font-semibold text-foreground">StockFlow</span>
             </div>
             <div className="flex gap-8">
-              <Link href="#" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Privacy</Link>
-              <Link href="#" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Terms</Link>
-              <Link href="#" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Support</Link>
+              <Link href="#" className="hover:text-foreground transition-colors">Privacy</Link>
+              <Link href="#" className="hover:text-foreground transition-colors">Terms</Link>
+              <Link href="#" className="hover:text-foreground transition-colors">Support</Link>
             </div>
             <p>© 2026 StockFlow Inc. All rights reserved.</p>
           </div>
@@ -225,7 +225,7 @@ export default function Home() {
                     card: "bg-white dark:bg-zinc-950 shadow-none border-0",
                     headerTitle: "text-zinc-900 dark:text-zinc-50",
                     headerSubtitle: "text-zinc-600 dark:text-zinc-400",
-                    socialButtonsBlockButton: "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50",
+                    socialButtonsBlockButton: "bg-white dark:bg-zinc-900 border-border hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50",
                     formButtonPrimary: "bg-indigo-600 hover:bg-indigo-700",
                     footerActionText: "text-zinc-600 dark:text-zinc-400",
                     footerActionLink: "text-indigo-600 hover:text-indigo-700",
