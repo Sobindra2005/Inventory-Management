@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CalendarClock, ChevronDown, IndianRupee, Search, Users } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import React, { useMemo, useState } from "react";
+import { AlertTriangle, CalendarClock, IndianRupee, Search, Users } from "lucide-react";
+import { motion } from "motion/react";
 import { useCustomerCreditList } from "@/lib/queries/use-customers-credit-query";
 import type { CreditStatus } from "@/lib/contracts/customers";
+import { CustomSelect } from "@/components/ui/custom-select";
 
 const formatMoney = (value: number) => `Rs.${value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 
@@ -34,87 +35,12 @@ const statusClasses: Record<CreditStatus, string> = {
   overdue: "bg-destructive/15 text-destructive",
 };
 
-interface CreditStatusSelectProps {
-  value: "all" | CreditStatus;
-  onChange: (value: "all" | CreditStatus) => void;
-  label?: string;
-}
-
-const CreditStatusSelect: React.FC<CreditStatusSelectProps> = ({
-  value,
-  onChange,
-  label,
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const options: Array<{ value: "all" | CreditStatus; label: string }> = [
-    { value: "all", label: "All" },
-    { value: "clear", label: "Clear" },
-    { value: "due", label: "Due" },
-    { value: "overdue", label: "Overdue" },
-  ];
-
-  const selectedLabel = options.find((option) => option.value === value)?.label ?? "All";
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      {label && <label className="mb-2 block text-xs font-medium text-muted-foreground">{label}</label>}
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full h-10 px-4 bg-muted/30 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all text-left flex items-center justify-between hover:bg-muted/50 text-foreground"
-      >
-        <span className="text-sm">{selectedLabel}</span>
-        <ChevronDown
-          className="w-4 h-4 text-muted-foreground transition-transform"
-          style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
-        />
-      </button>
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-10 overflow-hidden"
-          >
-            {options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                  value === option.value
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-foreground hover:bg-accent"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
+const creditStatusOptions: Array<{ value: "all" | CreditStatus; label: string }> = [
+  { value: "all", label: "All" },
+  { value: "clear", label: "Clear" },
+  { value: "due", label: "Due" },
+  { value: "overdue", label: "Overdue" },
+];
 
 export const CustomersCreditManager: React.FC = () => {
   const customerCreditQuery = useCustomerCreditList();
@@ -216,10 +142,11 @@ export const CustomersCreditManager: React.FC = () => {
           </div>
 
           <div className="w-full lg:w-52">
-            <CreditStatusSelect
+            <CustomSelect
               label="Credit status"
               value={statusFilter}
-              onChange={setStatusFilter}
+              onChange={(value) => setStatusFilter(value as "all" | CreditStatus)}
+              options={creditStatusOptions}
             />
           </div>
         </div>

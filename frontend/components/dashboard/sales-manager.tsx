@@ -5,9 +5,9 @@
 
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Search, Plus, Trash2, ChevronDown, X, Loader } from "lucide-react";
+import { Search, Plus, Trash2, Loader } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -15,6 +15,7 @@ import {
     createCustomerDefaults,
     type CreateCustomerFormData,
 } from "@/lib/forms/sales";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { useInventoryList } from "@/lib/queries/use-inventory-query";
 import { useSalesHistory, useCreateSale, useCustomers, useCreateCustomer } from "@/lib/queries/use-sales-query";
 import { InvoiceModal } from "./invoice-modal";
@@ -427,18 +428,17 @@ export const SalesManager: React.FC = () => {
                                     </div>
                                 ) : (
                                     <>
-                                        <select
+                                        <CustomSelect
                                             value={selectedCustomerId || ""}
-                                            onChange={(e) => setSelectedCustomerId(e.target.value || null)}
-                                            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
-                                        >
-                                            <option value="">Select a customer...</option>
-                                            {customersQuery.data?.customers.map((customer) => (
-                                                <option key={customer.id} value={customer.id}>
-                                                    {customer.name} (Due: {formatPrice(customer.dueAmount)})
-                                                </option>
-                                            ))}
-                                        </select>
+                                            onChange={(value) => setSelectedCustomerId(value || null)}
+                                            options={[
+                                                { value: "", label: "Select a customer..." },
+                                                ...(customersQuery.data?.customers.map((customer) => ({
+                                                    value: customer.id,
+                                                    label: `${customer.name} (Due: ${formatPrice(customer.dueAmount)})`,
+                                                })) || []),
+                                            ]}
+                                        />
 
                                         {!showCreateCustomer && (
                                             <button

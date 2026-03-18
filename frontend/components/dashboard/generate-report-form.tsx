@@ -7,6 +7,7 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { generateReportDefaults, GenerateReportFormData, generateReportSchema } from '@/lib/forms/dashboard';
+import { CustomSelect } from '@/components/ui/custom-select';
 
 
 interface GenerateReportFormProps {
@@ -21,6 +22,8 @@ export const GenerateReportForm: React.FC<GenerateReportFormProps> = ({
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<GenerateReportFormData>({
     resolver: zodResolver(generateReportSchema),
@@ -28,6 +31,14 @@ export const GenerateReportForm: React.FC<GenerateReportFormProps> = ({
   });
 
   const isLoading_ = isLoading || isSubmitting;
+  const selectedReportType = watch('type');
+
+  const reportTypeOptions = [
+    { value: 'daily_summary', label: 'Daily Summary' },
+    { value: 'sales', label: 'Sales Report' },
+    { value: 'inventory', label: 'Inventory Report' },
+    { value: 'customer', label: 'Customer Report' },
+  ];
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -36,16 +47,12 @@ export const GenerateReportForm: React.FC<GenerateReportFormProps> = ({
         <label className="block text-sm font-medium mb-2">
           Report Type
         </label>
-        <select
-          {...register('type')}
+        <CustomSelect
+          value={selectedReportType}
+          onChange={(value) => setValue('type', value as GenerateReportFormData['type'], { shouldValidate: true })}
+          options={reportTypeOptions}
           disabled={isLoading_}
-          className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:bg-muted disabled:text-muted-foreground transition-all"
-        >
-          <option value="daily_summary">Daily Summary</option>
-          <option value="sales">Sales Report</option>
-          <option value="inventory">Inventory Report</option>
-          <option value="customer">Customer Report</option>
-        </select>
+        />
         {errors.type && (
           <p className="mt-1 text-sm text-red-600">{errors.type.message}</p>
         )}
