@@ -2,10 +2,10 @@
 
 import React, { useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, IndianRupee, Search, Users } from "lucide-react";
-import { motion } from "motion/react";
 import { useCustomerCreditList } from "@/lib/queries/use-customers-credit-query";
 import type { CreditStatus } from "@/lib/contracts/customers";
 import { CustomSelect } from "@/components/ui/custom-select";
+import { KPICard } from "@/components/dashboard/kpi-card";
 
 const formatMoney = (value: number) => `Rs.${value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 
@@ -106,21 +106,15 @@ export const CustomersCreditManager: React.FC = () => {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {kpis.map((kpi, index) => (
-          <motion.div
+        {kpis.map((kpi) => (
+          <KPICard
             key={kpi.title}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.04 }}
-            className="rounded-2xl border border-border bg-card p-4"
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{kpi.title}</p>
-              <kpi.icon className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{kpi.sub}</p>
-          </motion.div>
+            icon={<kpi.icon className="h-4 w-4" />}
+            label={kpi.title}
+            value={kpi.value}
+            subtext={kpi.sub}
+            isLoading={customerCreditQuery.isLoading}
+          />
         ))}
       </div>
 
