@@ -17,12 +17,26 @@ class ClerkAuthMiddleware(BaseHTTPMiddleware):
             try:
                 payload = verify_clerk_jwt(token)
                 request.state.user_id = payload.get("sub")
+                logger.info(
+                    "Auth verified for %s %s; user_id=%s",
+                    request.method,
+                    request.url.path,
+                    request.state.user_id,
+                )
             except Exception:
                 request.state.user_id = None
+                logger.warning(
+                    "Auth verification failed for %s %s",
+                    request.method,
+                    request.url.path,
+                )
         else:
             request.state.user_id = None
-        
-        logger.info(f"Request: {request.method} {request.url} - User ID: {request.state.user_id}")
+            logger.debug(
+                "No bearer token on %s %s",
+                request.method,
+                request.url.path,
+            )
         
         response = await call_next(request)
         return response

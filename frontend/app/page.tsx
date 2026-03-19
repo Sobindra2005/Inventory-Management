@@ -7,6 +7,7 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { X, Package, Receipt, BarChart3, ArrowRight, Sun, Moon } from "lucide-react";
+import { useHealthQuery } from "@/lib/queries/use-health-query";
 
 const features = [
   {
@@ -31,8 +32,11 @@ export default function Home() {
   const { setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
   const [showSignIn, setShowSignIn] = useState(false);
+  const healthQuery = useHealthQuery({ enabled: isLoaded });
 
   if (!isLoaded) return null;
+
+  console.log("API Health:", healthQuery.data);
 
   const handleDashboardAccess = () => {
     if (userId) {

@@ -5,6 +5,11 @@ from fastapi import HTTPException, status
 
 from app.core.config import settings
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 
 def parse_duration(value: str) -> timedelta:
     if not value or len(value) < 2:
@@ -46,6 +51,16 @@ def verify_clerk_jwt(token: str) -> dict:
             decode_kwargs["audience"] = AUDIENCE
 
         payload = jwt.decode(token, **decode_kwargs)
+
+        logger.info(
+            "JWT decoded: sub=%s iss=%s aud=%s",
+            payload.get("sub"),
+            payload.get("iss"),
+            payload.get("aud"),
+        )
+
         return payload
-    except jwt.PyJWTError:
+    except jwt.PyJWTError as error:
+        logger.warning("JWT decode failed: %s", str(error))
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
