@@ -32,9 +32,11 @@ JWT_SECRET = settings.JWT_SECRET
 JWT_ACCESS_EXPIRES = parse_duration(settings.JWT_ACCESS_EXPIRATION)
 JWT_REFRESH_EXPIRES = parse_duration(settings.JWT_REFRESH_EXPIRATION)
 
-CLERK_JWT_KEY = settings.CLERK_JWT_KEY
-ALGORITHM = settings.CLERK_JWT_ALGORITHM
+# Convert escaped newlines to actual newlines (for .env file compatibility)
+PUBLIC_KEY = settings.PUBLIC_KEY.replace('\\n', '\n')
+ALGORITHM = settings.CLERK_JWT_ALGORITHM.strip()
 AUDIENCE = settings.CLERK_JWT_AUDIENCE
+JWT_LEEWAY_SECONDS = 60
 
 
 def verify_clerk_jwt(token: str) -> dict:
@@ -43,9 +45,33 @@ def verify_clerk_jwt(token: str) -> dict:
     Raises 401 if invalid.
     """
     try:
+        if ALGORITHM.startswith("RS") and not PUBLIC_KEY.strip().startswith("-----BEGIN"):
+            logger.warning(
+                "Configured %s but PUBLIC_KEY is not a PEM public key. Use Clerk JWT verification key/JWKS public key, not secret key.",
+                ALGORITHM,
+            )
+
+        token_header = jwt.get_unverified_header(token)
+        token_alg = token_header.get("alg")
+
+        logger.info(
+            "Verifying JWT: token_alg=%s, expected_alg=%s, aud=%s",
+            token_alg,
+            ALGORITHM,
+            AUDIENCE,
+        )
+
+        if token_alg and token_alg != ALGORITHM:
+            logger.warning(
+                "JWT alg mismatch: token alg=%s, configured alg=%s",
+                token_alg,
+                ALGORITHM,
+            )
+
         decode_kwargs = {
-            "key": CLERK_JWT_KEY,
+            "key": PUBLIC_KEY,
             "algorithms": [ALGORITHM],
+            "leeway": JWT_LEEWAY_SECONDS,
         }
         if AUDIENCE:
             decode_kwargs["audience"] = AUDIENCE
@@ -60,6 +86,14 @@ def verify_clerk_jwt(token: str) -> dict:
         )
 
         return payload
+    except jwt.InvalidAlgorithmError as error:
+        logger.warning(
+            "JWT algorithm issue: %s (token_alg/configured_alg=%s/%s)",
+            str(error),
+            jwt.get_unverified_header(token).get("alg") if token else None,
+            ALGORITHM,
+        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     except jwt.PyJWTError as error:
         logger.warning("JWT decode failed: %s", str(error))
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")

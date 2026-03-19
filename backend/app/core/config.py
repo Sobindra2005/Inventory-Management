@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     JWT_ACCESS_EXPIRATION: str = "15m"
     JWT_REFRESH_EXPIRATION: str = "29d"
 
-    CLERK_JWT_KEY: str
-    CLERK_JWT_ALGORITHM: str = "HS256"
+    PUBLIC_KEY: str
+    CLERK_JWT_ALGORITHM: str = "RS256"
     CLERK_JWT_AUDIENCE: str | None = None
 
     CLOUDINARY_CLOUD_NAME: str
