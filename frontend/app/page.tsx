@@ -36,8 +36,6 @@ export default function Home() {
 
   if (!isLoaded) return null;
 
-  console.log("API Health:", healthQuery.data);
-
   const handleDashboardAccess = () => {
     if (userId) {
       router.push("/dashboard");
