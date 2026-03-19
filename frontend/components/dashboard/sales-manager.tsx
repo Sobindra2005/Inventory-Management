@@ -47,6 +47,7 @@ export const SalesManager: React.FC = () => {
     const [discount, setDiscount] = useState(0);
     const [paymentMethod, setPaymentMethod] = useState<"cash" | "credit">("cash");
     const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+    const [creditTillDate, setCreditTillDate] = useState("");
     const [searchProduct, setSearchProduct] = useState("");
     const [showCreateCustomer, setShowCreateCustomer] = useState(false);
     const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -152,6 +153,16 @@ export const SalesManager: React.FC = () => {
             return;
         }
 
+        if (paymentMethod === "credit" && !selectedCustomerId) {
+            alert("Please select a customer for credit billing.");
+            return;
+        }
+
+        if (paymentMethod === "credit" && !creditTillDate) {
+            alert("Please select a Credit Till date for credit billing.");
+            return;
+        }
+
         const dueAmount = paymentMethod === "credit" ? cartTotals.total : 0;
 
         try {
@@ -165,6 +176,7 @@ export const SalesManager: React.FC = () => {
                         ? customersQuery.data?.customers.find((c) => c.id === selectedCustomerId)?.name
                         : undefined,
                 dueAmount: paymentMethod === "credit" ? dueAmount : undefined,
+                creditUntil: paymentMethod === "credit" ? creditTillDate : undefined,
             });
 
             setGeneratedInvoice(response.invoice);
@@ -176,6 +188,7 @@ export const SalesManager: React.FC = () => {
                 setDiscount(0);
                 setPaymentMethod("cash");
                 setSelectedCustomerId(null);
+                setCreditTillDate("");
                 setSearchProduct("");
             }, 500);
         } catch (error) {
@@ -192,6 +205,7 @@ export const SalesManager: React.FC = () => {
             setDiscount(0);
             setPaymentMethod("cash");
             setSelectedCustomerId(null);
+            setCreditTillDate("");
         }
     };
 
@@ -396,6 +410,7 @@ export const SalesManager: React.FC = () => {
                                     onClick={() => {
                                         setPaymentMethod("cash");
                                         setSelectedCustomerId(null);
+                                        setCreditTillDate("");
                                     }}
                                     className={`rounded-lg py-2 px-3 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 border ${paymentMethod === "cash"
                                             ? "border-primary bg-primary/10 text-primary"
@@ -448,6 +463,16 @@ export const SalesManager: React.FC = () => {
                                                 + Add New Customer
                                             </button>
                                         )}
+
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-medium text-muted-foreground">Credit Till</label>
+                                            <input
+                                                type="date"
+                                                value={creditTillDate}
+                                                onChange={(event) => setCreditTillDate(event.target.value)}
+                                                className="w-full h-10 rounded-xl border border-border bg-muted/30 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                            />
+                                        </div>
                                     </>
                                 )}
 

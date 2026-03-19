@@ -24,7 +24,37 @@ def _utc_now() -> datetime:
 def _to_iso_utc(value: datetime) -> str:
     if value is None:
         return None
+    if isinstance(value, str):
+        return value
     return value.isoformat().replace("+00:00", "Z")
+
+
+def _normalize_datetime(value) -> datetime | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+    if isinstance(value, str):
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if parsed.tzinfo is None:
+                return parsed.replace(tzinfo=timezone.utc)
+            return parsed.astimezone(timezone.utc)
+        except ValueError:
+            return None
+    return None
+
+
+def _resolve_credit_status(outstanding_credit: float, credit_until: datetime | None) -> str:
+    if outstanding_credit <= 0:
+        return "clear"
+
+    if credit_until and credit_until < _utc_now():
+        return "overdue"
+
+    return "due"
 
 
 def _get_user_id(request: Request) -> str:
@@ -51,18 +81,22 @@ def _to_customer(document: dict) -> Customer:
 
 
 def _to_customer_credit_detail(document: dict) -> CustomerCreditDetail:
+    outstanding_credit = document.get("outstandingCredit", 0)
+    credit_until = _normalize_datetime(document.get("creditUntil"))
+    resolved_status = _resolve_credit_status(outstanding_credit, credit_until)
+
     return CustomerCreditDetail(
         id=str(document["_id"]),
-        name=document["customerName"],
+        name=document.get("customerName") or "Unknown Customer",
         email=document.get("email"),
         phone=document.get("phone"),
         totalCreditIssued=document.get("totalCreditIssued", 0),
-        outstandingCredit=document.get("outstandingCredit", 0),
+        outstandingCredit=outstanding_credit,
         totalCreditInvoices=document.get("totalCreditInvoices", 0),
         lastCreditAt=_to_iso_utc(document.get("lastCreditAt")),
         lastCreditClearedAt=_to_iso_utc(document.get("lastCreditClearedAt")),
-        creditUntil=_to_iso_utc(document.get("creditUntil")),
-        status=document.get("status", "clear"),
+        creditUntil=_to_iso_utc(credit_until),
+        status=resolved_status,
         createdAt=_to_iso_utc(document["createdAt"]),
         updatedAt=_to_iso_utc(document["updatedAt"]),
     )
@@ -129,7 +163,7 @@ async def get_customer_credit(request: Request):
     total_customers = len(documents)
     customers_with_due = sum(1 for doc in documents if doc.get("outstandingCredit", 0) > 0)
     total_outstanding = sum(doc.get("outstandingCredit", 0) for doc in documents)
-    overdue_customers = sum(1 for doc in documents if doc.get("status") == "overdue")
+    overdue_customers = sum(1 for customer in customers if customer.status == "overdue")
 
     summary = CustomerCreditSummary(
         totalCustomers=total_customers,

@@ -24,7 +24,36 @@ def _utc_now() -> datetime:
 
 
 def _to_iso_utc(value: datetime) -> str:
+    if value is None:
+        return None
     return value.isoformat().replace("+00:00", "Z")
+
+
+def _parse_credit_until(value: str | None) -> datetime | None:
+    if not value:
+        return None
+
+    try:
+        if len(value) == 10:
+            date_only = datetime.strptime(value, "%Y-%m-%d")
+            return date_only.replace(hour=23, minute=59, second=59, microsecond=0, tzinfo=timezone.utc)
+
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid creditUntil format") from error
+
+
+def _resolve_credit_status(outstanding_credit: float, credit_until: datetime | None) -> str:
+    if outstanding_credit <= 0:
+        return "clear"
+
+    if credit_until and credit_until < _utc_now():
+        return "overdue"
+
+    return "due"
 
 
 def _get_user_id(request: Request) -> str:
@@ -83,6 +112,7 @@ def _to_invoice(document: dict) -> Invoice:
         customerId=document.get("customerId"),
         customerName=document.get("customerName"),
         dueAmount=document.get("dueAmount"),
+        creditUntil=_to_iso_utc(document.get("creditUntil")),
         itemCount=document["itemCount"],
     )
 
@@ -97,6 +127,19 @@ async def create_sale(request: Request, payload: CreateSaleRequest):
     inventory_col = database["inventory_items"]
     sales_col = database["sales_invoices"]
     credit_ledger_col = database["credit_ledger"]
+    credit_until = _parse_credit_until(payload.creditUntil)
+
+    if payload.paymentMethod == "credit" and not payload.customerId:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="customerId is required for credit sales",
+        )
+
+    if payload.paymentMethod == "credit" and not credit_until:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="creditUntil is required for credit sales",
+        )
 
     # Validate and deduct stock for all items
     items_with_totals = []
@@ -157,6 +200,7 @@ async def create_sale(request: Request, payload: CreateSaleRequest):
         "customerId": payload.customerId,
         "customerName": payload.customerName,
         "dueAmount": payload.dueAmount if payload.paymentMethod == "credit" else None,
+        "creditUntil": credit_until if payload.paymentMethod == "credit" else None,
         "itemCount": len(items_with_totals),
         "createdAt": now,
         "updatedAt": now,
@@ -170,6 +214,16 @@ async def create_sale(request: Request, payload: CreateSaleRequest):
             {"userId": user_id, "customerId": payload.customerId}
         )
         if credit_doc:
+            existing_credit_until = credit_doc.get("creditUntil")
+            nearest_credit_until = existing_credit_until
+            if credit_until and existing_credit_until:
+                nearest_credit_until = min(existing_credit_until, credit_until)
+            elif credit_until:
+                nearest_credit_until = credit_until
+
+            updated_outstanding_credit = credit_doc.get("outstandingCredit", 0) + total
+            updated_status = _resolve_credit_status(updated_outstanding_credit, nearest_credit_until)
+
             # Update existing credit ledger
             await credit_ledger_col.update_one(
                 {"_id": credit_doc["_id"]},
@@ -180,12 +234,17 @@ async def create_sale(request: Request, payload: CreateSaleRequest):
                         "totalCreditInvoices": 1,
                     },
                     "$set": {
+                        "customerName": payload.customerName,
                         "lastCreditAt": now,
+                        "creditUntil": nearest_credit_until,
+                        "status": updated_status,
                         "updatedAt": now,
                     },
                 },
             )
         else:
+            initial_status = _resolve_credit_status(total, credit_until)
+
             # Create new credit ledger
             await credit_ledger_col.insert_one(
                 {
@@ -197,8 +256,8 @@ async def create_sale(request: Request, payload: CreateSaleRequest):
                     "totalCreditInvoices": 1,
                     "lastCreditAt": now,
                     "lastCreditClearedAt": None,
-                    "creditUntil": None,
-                    "status": "due",
+                    "creditUntil": credit_until,
+                    "status": initial_status,
                     "createdAt": now,
                     "updatedAt": now,
                 }

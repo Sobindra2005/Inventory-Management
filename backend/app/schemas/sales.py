@@ -32,6 +32,7 @@ class Invoice(BaseModel):
     customerId: str | None = None
     customerName: str | None = None
     dueAmount: float | None = None
+    creditUntil: str | None = None
     itemCount: int = Field(ge=0)
 
 
@@ -52,6 +53,7 @@ class CreateSaleRequest(BaseModel):
     customerId: str | None = None
     customerName: str | None = None
     dueAmount: float | None = None
+    creditUntil: str | None = None
 
 
 class SalesHistoryResponse(BaseModel):
