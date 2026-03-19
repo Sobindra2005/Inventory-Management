@@ -113,27 +113,6 @@ async def list_customers(request: Request):
     return CustomerListResponse(customers=customers)
 
 
-@router.get("/{customer_id}", response_model=Customer)
-async def get_customer(customer_id: str, request: Request):
-    user_id = _get_user_id(request)
-    database = get_mongo_db()
-    if database is None:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database unavailable")
-
-    customers_col = database["customers"]
-
-    try:
-        object_id = ObjectId(customer_id)
-    except InvalidId:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
-
-    document = await customers_col.find_one({"_id": object_id, "userId": user_id})
-    if document is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
-
-    return _to_customer(document)
-
-
 @router.get("/credit", response_model=CustomerCreditListResponse)
 async def get_customer_credit(request: Request):
     user_id = _get_user_id(request)
@@ -160,3 +139,24 @@ async def get_customer_credit(request: Request):
     )
 
     return CustomerCreditListResponse(summary=summary, customers=customers)
+
+
+@router.get("/{customer_id}", response_model=Customer)
+async def get_customer(customer_id: str, request: Request):
+    user_id = _get_user_id(request)
+    database = get_mongo_db()
+    if database is None:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database unavailable")
+
+    customers_col = database["customers"]
+
+    try:
+        object_id = ObjectId(customer_id)
+    except InvalidId:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
+
+    document = await customers_col.find_one({"_id": object_id, "userId": user_id})
+    if document is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
+
+    return _to_customer(document)
