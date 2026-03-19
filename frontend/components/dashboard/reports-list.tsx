@@ -3,7 +3,7 @@
  * Displays generated reports with download functionality
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { GeneratedReport } from '@/lib/contracts/dashboard';
 import {
   formatReportDate,
@@ -16,15 +16,24 @@ interface ReportsListProps {
   reports: GeneratedReport[];
   onDownload: (reportId: string) => Promise<void>;
   isLoading?: boolean;
-  isDownloading?: boolean;
 }
 
 export const ReportsList: React.FC<ReportsListProps> = ({
   reports,
   onDownload,
   isLoading,
-  isDownloading,
 }) => {
+  const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
+
+  const handleDownload = async (reportId: string) => {
+    setDownloadingReportId(reportId);
+    try {
+      await onDownload(reportId);
+    } finally {
+      setDownloadingReportId(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="bg-card text-card-foreground rounded-xl shadow-sm border border-border p-6">
@@ -79,6 +88,7 @@ export const ReportsList: React.FC<ReportsListProps> = ({
             {reports.map((report) => {
               const statusBadge = getReportStatusBadge(report.status);
               const canDownload = report.status === 'completed' && report.fileUrl;
+              const isDownloadingThis = downloadingReportId === report.id;
 
               return (
                 <tr key={report.id} className="hover:bg-accent/50 transition-colors">
@@ -108,11 +118,11 @@ export const ReportsList: React.FC<ReportsListProps> = ({
                   <td className="px-4 py-4 text-center">
                     {canDownload ? (
                       <button
-                        onClick={() => onDownload(report.id)}
-                        disabled={isDownloading}
+                        onClick={() => handleDownload(report.id)}
+                        disabled={isDownloadingThis}
                         className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary hover:bg-accent rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {isDownloading ? (
+                        {isDownloadingThis ? (
                           <>
                             <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                             Downloading...

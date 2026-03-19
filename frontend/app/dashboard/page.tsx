@@ -166,7 +166,6 @@ export default function DashboardPage() {
             reports={reportsQuery.data ?? []}
             onDownload={handleDownloadReport}
             isLoading={reportsQuery.isLoading}
-            isDownloading={downloadReportMutation.isPending}
           />
         </div>
       </div>
