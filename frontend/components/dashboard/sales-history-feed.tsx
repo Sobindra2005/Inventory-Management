@@ -6,10 +6,11 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { Calendar, TrendingUp, CreditCard, Wallet } from "lucide-react";
-import type { SalesHistory, Invoice } from "@/lib/contracts/sales";
+import type { SalesHistory } from "@/lib/contracts/sales";
 import { InvoiceModal } from "./invoice-modal";
+import { useInvoice } from "@/lib/queries/use-sales-query";
 
 interface SalesHistoryProps {
   sales: SalesHistory[];
@@ -18,6 +19,11 @@ interface SalesHistoryProps {
 export const SalesHistoryFeed: React.FC<SalesHistoryProps> = ({ sales }) => {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const {
+    data: selectedInvoice,
+    isLoading: isInvoiceLoading,
+    isError: isInvoiceError,
+  } = useInvoice(selectedInvoiceId ?? "");
 
   // Group sales by date
   const groupedSales = useMemo(() => {
@@ -237,22 +243,12 @@ export const SalesHistoryFeed: React.FC<SalesHistoryProps> = ({ sales }) => {
         </div>
       )}
 
-      {/* Invoice Modal - Placeholder Data */}
+      {/* Invoice Modal */}
       <InvoiceModal
-        invoice={{
-          id: "inv-1",
-          shopName: "POS Store",
-          shopContact: "+1 (555) 123-4567",
-          invoiceId: selectedInvoiceId || "",
-          dateTime: new Date().toISOString(),
-          items: [],
-          subtotal: 0,
-          discount: 0,
-          total: 0,
-          paymentMethod: "cash",
-          itemCount: 0,
-        }}
+        invoice={selectedInvoice ?? null}
         isOpen={isModalOpen}
+        isLoading={isInvoiceLoading}
+        errorMessage={isInvoiceError ? "Failed to load invoice details." : null}
         onClose={() => {
           setIsModalOpen(false);
           setSelectedInvoiceId(null);
