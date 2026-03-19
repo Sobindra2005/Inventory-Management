@@ -1,7 +1,12 @@
+import logging
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.jwt import verify_clerk_jwt
+
+
+logger = logging.getLogger(__name__)
 
 
 class ClerkAuthMiddleware(BaseHTTPMiddleware):
@@ -16,6 +21,8 @@ class ClerkAuthMiddleware(BaseHTTPMiddleware):
                 request.state.user_id = None
         else:
             request.state.user_id = None
-
+        
+        logger.info(f"Request: {request.method} {request.url} - User ID: {request.state.user_id}")
+        
         response = await call_next(request)
         return response

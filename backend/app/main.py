@@ -9,7 +9,14 @@ from app.core.middleware import ClerkAuthMiddleware
 from app.db.mongo import close_mongo_connection, connect_to_mongo
 from app.db.redis import close_redis_connection, connect_to_redis
 from app.services.cloudinary_service import setup_cloudinary
+import logging
 
+# Configure Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

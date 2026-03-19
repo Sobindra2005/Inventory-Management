@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme-provider";
+import { setHttpClientAuthTokenGetter } from "@/lib/api/http-client";
 
 type AppProvidersProps = {
   children: React.ReactNode;
 };
 
 export function AppProviders({ children }: AppProvidersProps) {
+  const { getToken } = useAuth();
+
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -24,6 +28,14 @@ export function AppProviders({ children }: AppProvidersProps) {
         },
       }),
   );
+
+  useEffect(() => {
+    setHttpClientAuthTokenGetter(() => getToken());
+
+    return () => {
+      setHttpClientAuthTokenGetter(null);
+    };
+  }, [getToken]);
 
   return (
     <QueryClientProvider client={queryClient}>
