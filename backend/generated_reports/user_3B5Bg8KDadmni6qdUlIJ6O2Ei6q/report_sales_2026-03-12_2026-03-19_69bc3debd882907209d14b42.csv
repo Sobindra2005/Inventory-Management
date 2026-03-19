@@ -1,0 +1,2 @@
+userId,invoiceId,shopName,shopContact,dateTime,items,subtotal,discount,total,paymentMethod,customerId,customerName,dueAmount,creditUntil,itemCount,createdAt,updatedAt
+user_3B5Bg8KDadmni6qdUlIJ6O2Ei6q,INV-20260319-3B5AC,POS Store,,2026-03-19T18:17:19.719000Z,"[{'productId': '69bc3d8f97563b320a5fa15f', 'name': 'john doe', 'price': 0.0, 'quantity': 9, 'stock': 1000, 'itemTotal': 0.0}]",0.0,0.0,0.0,credit,69bc3dadd882907209d14b40,Sobhindra Budhathoki,0.0,2026-03-26T23:59:59Z,1,2026-03-19T18:17:19.719000Z,2026-03-19T18:17:19.719000Z

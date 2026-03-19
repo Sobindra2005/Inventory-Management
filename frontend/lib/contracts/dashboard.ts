@@ -43,7 +43,7 @@ export interface GeneratedReport {
   };
   fileUrl?: string;
   fileSize?: number;
-  status: 'completed' | 'processing' | 'failed';
+  status: 'queued' | 'completed' | 'processing' | 'failed';
   createdAt: string;
   updatedAt: string;
 }

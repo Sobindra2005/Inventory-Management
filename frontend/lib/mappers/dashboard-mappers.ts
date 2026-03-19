@@ -47,6 +47,7 @@ export const getReportTypeLabel = (type: GeneratedReport['type']): string => {
  */
 export const getReportStatusBadge = (status: GeneratedReport['status']): { label: string; color: string } => {
   const badges = {
+    queued: { label: 'Queued', color: 'bg-amber-500/15 text-amber-700 dark:text-amber-300' },
     completed: { label: 'Completed', color: 'bg-green-500/15 text-green-700 dark:text-green-300' },
     processing: { label: 'Processing', color: 'bg-blue-500/15 text-blue-700 dark:text-blue-300' },
     failed: { label: 'Failed', color: 'bg-destructive/15 text-destructive' },

@@ -1,18 +1,37 @@
 "use client";
 
-import { Search, Bell, Mail, Sun, Moon, Plus, ShoppingCart, Settings, LogOut, User } from "lucide-react";
+import { Search, Bell, Sun, Moon, Plus, ShoppingCart, Settings, LogOut, User } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { useClerk } from "@clerk/nextjs";
+import { useAuth, useClerk } from "@clerk/nextjs";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  notificationsQueryKeys,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotifications,
+} from "@/lib/queries/use-notifications-query";
 
 export default function TopNavbar() {
   const { setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
+  const { getToken } = useAuth();
   const { signOut } = useClerk();
+  const queryClient = useQueryClient();
+
+  const notificationsQuery = useNotifications(20);
+  const markReadMutation = useMarkNotificationRead();
+  const markAllReadMutation = useMarkAllNotificationsRead();
+
+  const notifications = notificationsQuery.data?.notifications ?? [];
+  const unreadCount = notificationsQuery.data?.unreadCount ?? 0;
+
+  const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
 
   // Close profile menu when clicking outside
   useEffect(() => {
@@ -20,11 +39,46 @@ export default function TopNavbar() {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
       }
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    let socket: WebSocket | null = null;
+    let cancelled = false;
+
+    const connect = async () => {
+      const token = await getToken();
+      if (!token || cancelled) {
+        return;
+      }
+
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+      const wsBaseUrl = apiBaseUrl.replace(/^http/i, "ws");
+      const wsUrl = `${wsBaseUrl}/api/v1/ws/notifications?token=${encodeURIComponent(token)}`;
+
+      socket = new WebSocket(wsUrl);
+
+      socket.onmessage = () => {
+        queryClient.invalidateQueries({ queryKey: notificationsQueryKeys.all });
+        queryClient.invalidateQueries({ queryKey: ["dashboard", "reports"] });
+      };
+    };
+
+    void connect();
+
+    return () => {
+      cancelled = true;
+      if (socket) {
+        socket.close();
+      }
+    };
+  }, [getToken, queryClient]);
 
   return (
     <header className="h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-8 sticky top-0 z-30 gap-6">
@@ -79,10 +133,68 @@ export default function TopNavbar() {
         </button>
 
         {/* Notifications */}
-        <button className="p-2 rounded-full hover:bg-accent relative transition-colors text-muted-foreground hover:text-foreground">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 border-2 border-background rounded-full"></span>
-        </button>
+        <div className="relative" ref={notificationsRef}>
+          <button
+            onClick={() => setShowNotifications((open) => !open)}
+            className="p-2 rounded-full hover:bg-accent relative transition-colors text-muted-foreground hover:text-foreground"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 min-w-4 h-4 px-1 bg-red-500 text-white text-[10px] leading-4 rounded-full text-center border border-background">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {showNotifications && (
+            <div className="absolute right-0 mt-2 w-96 bg-card border border-border rounded-lg shadow-lg overflow-hidden z-40">
+              <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
+                <button
+                  onClick={() => markAllReadMutation.mutate()}
+                  className="text-xs text-primary hover:underline disabled:opacity-60"
+                  disabled={markAllReadMutation.isPending || unreadCount === 0}
+                >
+                  Mark all as read
+                </button>
+              </div>
+
+              <div className="max-h-80 overflow-y-auto divide-y divide-border">
+                {notificationsQuery.isLoading && (
+                  <div className="px-4 py-6 text-sm text-muted-foreground">Loading notifications...</div>
+                )}
+
+                {!notificationsQuery.isLoading && notifications.length === 0 && (
+                  <div className="px-4 py-6 text-sm text-muted-foreground">No notifications yet.</div>
+                )}
+
+                {notifications.map((notification) => (
+                  <button
+                    key={notification.id}
+                    onClick={() => {
+                      if (!notification.isRead) {
+                        markReadMutation.mutate(notification.id);
+                      }
+                      if (notification.reportId) {
+                        router.push("/dashboard");
+                        setShowNotifications(false);
+                      }
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-accent transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-sm text-foreground">{notification.message}</p>
+                      {!notification.isRead && <span className="mt-1 w-2 h-2 rounded-full bg-primary" />}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {new Date(notification.createdAt).toLocaleString()}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Profile Menu */}
         <div className="relative" ref={profileRef}>

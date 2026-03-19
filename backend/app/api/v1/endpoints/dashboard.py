@@ -1,11 +1,13 @@
 from datetime import datetime, timezone, timedelta
-import uuid
+from pathlib import Path
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, HTTPException, Request, status
+from fastapi.responses import FileResponse
 
 from app.api.deps import get_mongo_db
+from app.core.config import settings
 from app.schemas.dashboard import (
     CashVsCredit,
     DashboardData,
@@ -16,6 +18,8 @@ from app.schemas.dashboard import (
     LowStockProduct,
     LowStockResponse,
 )
+from app.services.realtime import publish_realtime_event
+from app.workers.report_tasks import generate_report_task
 
 router = APIRouter(prefix="/dashboard")
 
@@ -176,14 +180,49 @@ async def generate_report(request: Request, payload: GenerateReportRequest):
             "startDate": payload.startDate,
             "endDate": payload.endDate,
         },
+        "filePath": None,
+        "fileKey": None,
         "fileUrl": None,
         "fileSize": None,
-        "status": "processing",
+        "status": "queued",
         "createdAt": now,
         "updatedAt": now,
     }
 
     result = await reports_col.insert_one(report_doc)
+    report_id = str(result.inserted_id)
+
+    celery_task = generate_report_task.apply_async(
+        kwargs={
+            "report_id": report_id,
+            "user_id": user_id,
+            "report_type": payload.type,
+            "start_date": payload.startDate,
+            "end_date": payload.endDate,
+        },
+        queue=settings.CELERY_REPORT_QUEUE,
+    )
+
+    await reports_col.update_one(
+        {"_id": result.inserted_id},
+        {
+            "$set": {
+                "jobId": celery_task.id,
+                "updatedAt": _utc_now(),
+            }
+        },
+    )
+
+    await publish_realtime_event(
+        user_id=user_id,
+        event_type="report_status",
+        data={
+            "reportId": report_id,
+            "status": "queued",
+            "type": payload.type,
+        },
+    )
+
     created = await reports_col.find_one({"_id": result.inserted_id, "userId": user_id})
 
     if created is None:
@@ -231,9 +270,16 @@ async def download_report(report_id: str, request: Request):
             detail="Report is not ready for download",
         )
 
-    # Note: In production, this would stream the actual file from storage (e.g., Cloudinary, S3)
-    # For now, return a placeholder response
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Report download not yet implemented",
+    file_path = document.get("filePath")
+    if not file_path:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report file not found")
+
+    file = Path(file_path)
+    if not file.exists() or not file.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report file not found")
+
+    return FileResponse(
+        path=str(file),
+        media_type="text/csv",
+        filename=file.name,
     )

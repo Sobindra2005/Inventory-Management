@@ -116,7 +116,7 @@ export const useDownloadReport = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `report-${reportId}.pdf`;
+      link.download = `report-${reportId}.csv`;
       document.body.appendChild(link);
       link.click();
       window.URL.revokeObjectURL(url);
