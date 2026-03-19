@@ -27,13 +27,10 @@ const features = [
 ];
 
 export default function Home() {
-  const { userId, isLoaded ,getToken } = useAuth();
+  const { userId, isLoaded } = useAuth();
   const { setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
   const [showSignIn, setShowSignIn] = useState(false);
-
-  const token = getToken();
-  console.log("Auth token:", token , userId);
 
   if (!isLoaded) return null;
 

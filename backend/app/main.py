@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.core.middleware import ClerkAuthMiddleware
 from app.db.mongo import close_mongo_connection, connect_to_mongo
 from app.db.redis import close_redis_connection, connect_to_redis
 from app.services.cloudinary_service import setup_cloudinary
@@ -26,6 +27,8 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     lifespan=lifespan,
 )
+
+app.add_middleware(ClerkAuthMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
