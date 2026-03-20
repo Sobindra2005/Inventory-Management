@@ -2,12 +2,15 @@
 
 import Sidebar from "@/components/sidebar";
 import TopNavbar from "@/components/top-navbar";
+import { useRealtimeEvents } from "@/lib/queries/use-realtime-events";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  useRealtimeEvents();
+
   return (
     <div className="hidden md:flex h-screen bg-background text-foreground">
       {/* Sidebar - Fixed/Sticky on the left */}

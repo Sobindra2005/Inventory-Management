@@ -5,10 +5,8 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { useAuth, useClerk } from "@clerk/nextjs";
-import { useQueryClient } from "@tanstack/react-query";
+import { useClerk } from "@clerk/nextjs";
 import {
-  notificationsQueryKeys,
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
   useNotifications,
@@ -17,9 +15,7 @@ import {
 export default function TopNavbar() {
   const { setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
-  const { getToken } = useAuth();
   const { signOut } = useClerk();
-  const queryClient = useQueryClient();
 
   const notificationsQuery = useNotifications(20);
   const markReadMutation = useMarkNotificationRead();
@@ -47,38 +43,6 @@ export default function TopNavbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    let socket: WebSocket | null = null;
-    let cancelled = false;
-
-    const connect = async () => {
-      const token = await getToken();
-      if (!token || cancelled) {
-        return;
-      }
-
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-      const wsBaseUrl = apiBaseUrl.replace(/^http/i, "ws");
-      const wsUrl = `${wsBaseUrl}/api/v1/ws/notifications?token=${encodeURIComponent(token)}`;
-
-      socket = new WebSocket(wsUrl);
-
-      socket.onmessage = () => {
-        queryClient.invalidateQueries({ queryKey: notificationsQueryKeys.all });
-        queryClient.invalidateQueries({ queryKey: ["dashboard", "reports"] });
-      };
-    };
-
-    void connect();
-
-    return () => {
-      cancelled = true;
-      if (socket) {
-        socket.close();
-      }
-    };
-  }, [getToken, queryClient]);
 
   return (
     <header className="h-16 bg-background/80 backdrop-blur-md border-b border-border flex items-center justify-between px-8 sticky top-0 z-30 gap-6">

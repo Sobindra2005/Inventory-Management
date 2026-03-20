@@ -145,7 +145,7 @@ export default function DashboardPage() {
               {generateReportMutation.isSuccess && (
                 <div className="mt-4 p-3 rounded-lg bg-green-500/15 border border-green-500/30">
                   <p className="text-sm text-green-700 dark:text-green-300">
-                    Report generated successfully!
+                    Report queued successfully.
                   </p>
                 </div>
               )}
