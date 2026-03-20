@@ -12,6 +12,19 @@ class Settings(BaseSettings):
 
     REDIS_HOST: str = "redis"
     REDIS_PORT: int = 6379
+    REDIS_URL: str = "redis://redis:6379/0"
+
+    RABBITMQ_URL: str = "amqp://guest:guest@rabbitmq:5672//"
+    CELERY_BROKER_URL: str = "amqp://guest:guest@rabbitmq:5672//"
+    CELERY_RESULT_BACKEND: str = "redis://redis:6379/1"
+    CELERY_REPORT_QUEUE: str = "report_generation"
+
+    OPENROUTER_API_KEY: str | None = None
+    OPENROUTER_MODEL: str = "openai/gpt-4o-mini"
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+
+    REPORT_STORAGE_DIR: str = "/app/generated_reports"
+    WS_EVENTS_CHANNEL: str = "realtime_events"
 
     JWT_SECRET: str
     JWT_ACCESS_EXPIRATION: str = "15m"

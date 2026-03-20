@@ -368,14 +368,14 @@ export const InventoryManager: React.FC = () => {
                             transition={{ duration: 0.2 }}
                             className="mt-5 overflow-hidden"
                         >
-                            <div className="grid gap-3 border-t border-border pt-5 md:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid gap-3 border-t border-border pt-5 px-2 md:grid-cols-2 lg:grid-cols-3">
                                 <div>
                                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
                                         Product Name
                                     </label>
                                     <input
                                         {...register("name")}
-                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50"
                                     />
                                     {errors.name && (
                                         <p className="mt-1 text-xs text-destructive">{errors.name.message}</p>
@@ -388,7 +388,7 @@ export const InventoryManager: React.FC = () => {
                                     </label>
                                     <input
                                         {...register("barcode")}
-                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50"
                                     />
                                     {errors.barcode && (
                                         <p className="mt-1 text-xs text-destructive">{errors.barcode.message}</p>
@@ -401,7 +401,7 @@ export const InventoryManager: React.FC = () => {
                                     </label>
                                     <input
                                         {...register("category")}
-                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50"
                                     />
                                     {errors.category && (
                                         <p className="mt-1 text-xs text-destructive">{errors.category.message}</p>
@@ -416,7 +416,7 @@ export const InventoryManager: React.FC = () => {
                                         type="number"
                                         min={0}
                                         {...register("stock", { valueAsNumber: true })}
-                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50"
                                     />
                                     {errors.stock && (
                                         <p className="mt-1 text-xs text-destructive">{errors.stock.message}</p>
@@ -432,7 +432,7 @@ export const InventoryManager: React.FC = () => {
                                         step="0.01"
                                         min={0}
                                         {...register("price", { valueAsNumber: true })}
-                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50"
                                     />
                                     {errors.price && (
                                         <p className="mt-1 text-xs text-destructive">{errors.price.message}</p>
@@ -447,7 +447,7 @@ export const InventoryManager: React.FC = () => {
                                         type="number"
                                         min={1}
                                         {...register("lowStockThreshold", { valueAsNumber: true })}
-                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50"
                                     />
                                     {errors.lowStockThreshold && (
                                         <p className="mt-1 text-xs text-destructive">
@@ -550,7 +550,7 @@ export const InventoryManager: React.FC = () => {
                                                             setEditingStockId(null);
                                                         }
                                                     }}
-                                                    className="w-20 rounded-md border border-input bg-background px-2 py-1 text-sm outline-none ring-offset-background focus:ring-2 focus:ring-ring"
+                                                    className="w-20 rounded-md border border-input bg-background px-2 py-1 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50"
                                                 />
                                             ) : (
                                                 <button

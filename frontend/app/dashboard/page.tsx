@@ -5,6 +5,7 @@
 "use client";
 
 import React from "react";
+import { IndianRupee, Package, ReceiptText, Wallet } from "lucide-react";
 import {
   useDashboardData,
   useLowStockProducts,
@@ -86,31 +87,28 @@ export default function DashboardPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <KPICard
-              icon="💵"
+              icon={<IndianRupee className="h-4 w-4" />}
               label="Today's Sales"
-              value={`$${dashboardQuery.data?.kpi.todaySales ?? 0}`}
+              value={`Rs.${dashboardQuery.data?.kpi.todaySales ?? 0}`}
               subtext="Last 24 hours"
-              trend={{ direction: "up", percentage: 12 }}
               isLoading={isLoading}
             />
             <KPICard
-              icon="📦"
+              icon={<Package className="h-4 w-4" />}
               label="Items Sold"
               value={dashboardQuery.data?.kpi.itemsSold ?? 0}
               subtext="Last 24 hours"
-              trend={{ direction: "up", percentage: 8 }}
               isLoading={isLoading}
             />
             <KPICard
-              icon="🧾"
+              icon={<ReceiptText className="h-4 w-4" />}
               label="Total Transactions"
               value={dashboardQuery.data?.kpi.totalTransactions ?? 0}
               subtext="Last 24 hours"
-              trend={{ direction: "down", percentage: 2 }}
               isLoading={isLoading}
             />
             <KPICard
-              icon="💰"
+              icon={<Wallet className="h-4 w-4" />}
               label="Cash vs Credit"
               value={
                 dashboardQuery.data
@@ -147,7 +145,7 @@ export default function DashboardPage() {
               {generateReportMutation.isSuccess && (
                 <div className="mt-4 p-3 rounded-lg bg-green-500/15 border border-green-500/30">
                   <p className="text-sm text-green-700 dark:text-green-300">
-                    Report generated successfully!
+                    Report queued successfully.
                   </p>
                 </div>
               )}
@@ -168,7 +166,6 @@ export default function DashboardPage() {
             reports={reportsQuery.data ?? []}
             onDownload={handleDownloadReport}
             isLoading={reportsQuery.isLoading}
-            isDownloading={downloadReportMutation.isPending}
           />
         </div>
       </div>

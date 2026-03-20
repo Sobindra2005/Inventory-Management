@@ -22,7 +22,7 @@ import {
   LayoutDashboard
 } from "lucide-react";
 import { cn } from "@/lib/utils"; // Assuming a utility exists or I'll create one
-import { Show, UserButton } from "@clerk/nextjs";
+import { Show, useAuth, UserButton, useUser } from "@clerk/nextjs";
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -159,6 +159,8 @@ export default function Sidebar() {
       openUserMenu();
     }
   };
+
+  const { user } = useUser();
 
   const menuSections = [
     {
@@ -298,8 +300,8 @@ export default function Sidebar() {
             animate={{ opacity: isCollapsed ? 0 : 1, width: isCollapsed ? 0 : "auto" }}
             transition={{ duration: 0.2 }}
           >
-            <p className="text-sm font-bold text-foreground truncate">Himmad</p>
-            <p className="text-xs text-muted-foreground truncate">CEO-StockFlow</p>
+            <p className="text-sm font-bold text-foreground truncate">{user?.fullName || "User"}</p>
+            <p className="text-xs text-muted-foreground truncate">{user?.primaryEmailAddress?.emailAddress || "user@example.com"}</p>
           </motion.div>
           <motion.div
             initial={false}

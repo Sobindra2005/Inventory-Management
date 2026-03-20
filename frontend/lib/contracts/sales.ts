@@ -31,6 +31,7 @@ export interface Invoice {
   customerId?: string;
   customerName?: string;
   dueAmount?: number;
+  creditUntil?: string;
   itemCount: number;
 }
 
@@ -51,6 +52,7 @@ export interface CreateSaleRequest {
   customerId?: string;
   customerName?: string;
   dueAmount?: number;
+  creditUntil?: string;
 }
 
 export interface SalesHistoryResponse {

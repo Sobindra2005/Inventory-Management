@@ -33,6 +33,16 @@ services:
       - MONGODB_URI=${MONGODB_URI}
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672//}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-amqp://guest:guest@rabbitmq:5672//}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/1}
+      - CELERY_REPORT_QUEUE=${CELERY_REPORT_QUEUE:-report_generation}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      - REPORT_STORAGE_DIR=${REPORT_STORAGE_DIR:-/app/generated_reports}
+      - WS_EVENTS_CHANNEL=${WS_EVENTS_CHANNEL:-realtime_events}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_ACCESS_EXPIRATION=${JWT_ACCESS_EXPIRATION:-15m}
       - JWT_REFRESH_EXPIRATION=${JWT_REFRESH_EXPIRATION:-29d}
@@ -44,6 +54,8 @@ services:
       - "8000:8000"
     depends_on:
       redis:
+        condition: service_started
+      rabbitmq:
         condition: service_started
     develop:
       watch:
@@ -73,6 +85,54 @@ services:
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: inventory_rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app-network
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: inventory_celery_worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - MONGODB_URI=${MONGODB_URI}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - RABBITMQ_URL=${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672//}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-amqp://guest:guest@rabbitmq:5672//}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/1}
+      - CELERY_REPORT_QUEUE=${CELERY_REPORT_QUEUE:-report_generation}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      - REPORT_STORAGE_DIR=${REPORT_STORAGE_DIR:-/app/generated_reports}
+      - WS_EVENTS_CHANNEL=${WS_EVENTS_CHANNEL:-realtime_events}
+    command: celery -A app.core.celery_app.celery_app worker --loglevel=info -Q report_generation
+    depends_on:
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
     networks:
       - app-network
 

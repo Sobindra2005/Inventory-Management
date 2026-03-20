@@ -233,6 +233,9 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                       {invoice.dueAmount !== undefined && (
                         <p>Due Amount: ${invoice.dueAmount.toFixed(2)}</p>
                       )}
+                      {invoice.creditUntil && (
+                        <p>Credit Till: {new Date(invoice.creditUntil).toLocaleDateString("en-US")}</p>
+                      )}
                     </>
                   )}
                 </div>
