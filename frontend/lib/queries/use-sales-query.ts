@@ -31,7 +31,7 @@ async function withSalesFallback<T>(request: () => Promise<T>, fallback: T, key:
 
     const canUseFallback = await canProceedWithDemoFallback();
     if (canUseFallback) {
-      console.warn(`[Sales] ${key} failed, using demo fallback:`, error.message);
+      console.warn(`[Sales] ${key} failed, using demo fallback:`, error);
       showDemoFallbackNotice(key);
       return fallback;
     }

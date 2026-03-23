@@ -57,7 +57,7 @@ const withDashboardFallback = async <T>(
       `[dashboard-demo-fallback] Using sample data for ${source}. Set NEXT_PUBLIC_DASHBOARD_DEMO_FALLBACK=false to disable.`,
       error
     );
-    showDemoFallbackNotice(source);
+    // showDemoFallbackNotice(source);
     return fallback;
   }
 };

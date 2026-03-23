@@ -72,7 +72,7 @@ const withInventoryFallback = async (
       error
     );
 
-    showDemoFallbackNotice("inventory list");
+    // showDemoFallbackNotice("inventory list");
 
     return applyInventoryFilters(inventorySampleData, params);
   }

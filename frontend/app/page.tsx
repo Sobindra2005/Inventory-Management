@@ -494,7 +494,8 @@ export default function Home() {
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
-                animate={statsInView ? { opacity: 1, y: 0 } : {}}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
                 className="text-center"
               >
@@ -512,6 +513,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+
 
       {/* ─── Features Section (Bento Grid) ─── */}
       <section id="features" className="py-24 lg:py-32">
