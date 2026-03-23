@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme-provider";
+import { PopupMessageCenter } from "@/components/ui/popup-message-center";
 import { setHttpClientAuthTokenGetter } from "@/lib/api/http-client";
 
 type AppProvidersProps = {
@@ -41,6 +42,7 @@ export function AppProviders({ children }: AppProvidersProps) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         {children}
+        <PopupMessageCenter />
       </ThemeProvider>
     </QueryClientProvider>
   );

@@ -12,6 +12,8 @@ import {
   dashboardReportsSampleData,
   dashboardSampleData,
 } from '@/lib/demo/dashboard-sample-data';
+import { canProceedWithDemoFallback } from '@/lib/demo/fallback-gate';
+import { showDemoFallbackNotice } from '@/lib/demo/fallback-notice';
 
 export const dashboardQueryKeys = {
   all: ['dashboard'] as const,
@@ -46,10 +48,16 @@ const withDashboardFallback = async <T>(
       throw error;
     }
 
+    const canUseFallback = await canProceedWithDemoFallback();
+    if (!canUseFallback) {
+      throw error;
+    }
+
     console.warn(
       `[dashboard-demo-fallback] Using sample data for ${source}. Set NEXT_PUBLIC_DASHBOARD_DEMO_FALLBACK=false to disable.`,
       error
     );
+    showDemoFallbackNotice(source);
     return fallback;
   }
 };
