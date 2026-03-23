@@ -15,18 +15,29 @@ import {
 import { salesHistorySampleData, invoiceSampleData } from "@/lib/demo/sales-sample-data";
 import { isSalesDemoFallbackEnabled } from "@/lib/config/sales-demo";
 import type { CreateSaleRequest, SalesHistoryResponse, Customer } from "@/lib/contracts/sales";
+import { canProceedWithDemoFallback } from "@/lib/demo/fallback-gate";
+import { showDemoFallbackNotice } from "@/lib/demo/fallback-notice";
 
 /**
  * Generic fallback wrapper for sales queries
  */
-function withSalesFallback<T>(request: () => Promise<T>, fallback: T, key: string): Promise<T> {
-  return request().catch((error) => {
-    if (isSalesDemoFallbackEnabled) {
-      console.warn(`[Sales] ${key} failed, using demo fallback:`, error.message);
+async function withSalesFallback<T>(request: () => Promise<T>, fallback: T, key: string): Promise<T> {
+  try {
+    return await request();
+  } catch (error) {
+    if (!isSalesDemoFallbackEnabled) {
+      throw error;
+    }
+
+    const canUseFallback = await canProceedWithDemoFallback();
+    if (canUseFallback) {
+      console.warn(`[Sales] ${key} failed, using demo fallback:`, error);
+      showDemoFallbackNotice(key);
       return fallback;
     }
+
     throw error;
-  });
+  }
 }
 
 /**

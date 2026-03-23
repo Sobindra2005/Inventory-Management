@@ -3,6 +3,5 @@ import type { CustomerCreditListResponse } from "@/lib/contracts/customers";
 
 export async function fetchCustomerCreditList(): Promise<CustomerCreditListResponse> {
   const response = await httpClient.get("/api/v1/customers/credit");
-  console.log("Fetched customer credit list:", response.data);
   return response.data;
 }

@@ -8,6 +8,8 @@ import type {
   UpdateInventoryProductRequest,
 } from "@/lib/contracts/inventory";
 import { inventorySampleData } from "@/lib/demo/inventory-sample-data";
+import { canProceedWithDemoFallback } from "@/lib/demo/fallback-gate";
+import { showDemoFallbackNotice } from "@/lib/demo/fallback-notice";
 
 export const inventoryQueryKeys = {
   all: ["inventory"] as const,
@@ -60,10 +62,17 @@ const withInventoryFallback = async (
       throw error;
     }
 
+    const canUseFallback = await canProceedWithDemoFallback();
+    if (!canUseFallback) {
+      throw error;
+    }
+
     console.warn(
       "[inventory-demo-fallback] Using sample inventory data. Set NEXT_PUBLIC_INVENTORY_DEMO_FALLBACK=false to disable.",
       error
     );
+
+    // showDemoFallbackNotice("inventory list");
 
     return applyInventoryFilters(inventorySampleData, params);
   }

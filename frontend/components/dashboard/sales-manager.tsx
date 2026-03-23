@@ -21,6 +21,7 @@ import { useSalesHistory, useCreateSale, useCustomers, useCreateCustomer } from 
 import { InvoiceModal } from "./invoice-modal";
 import { SalesHistoryFeed } from "./sales-history-feed";
 import type { CartItem, CartItemWithTotal, Invoice } from "@/lib/contracts/sales";
+import { showPopupMessage } from "@/lib/ui/popup-message";
 
 const formatPrice = (value: number) => `Rs.${value.toFixed(2)}`;
 
@@ -149,17 +150,23 @@ export const SalesManager: React.FC = () => {
     // Handle generate invoice
     const generateInvoice = async () => {
         if (cartItems.length === 0) {
-            alert("Cart is empty. Add products first.");
+            showPopupMessage({ message: "Cart is empty. Add products first.", variant: "error" });
             return;
         }
 
         if (paymentMethod === "credit" && !selectedCustomerId) {
-            alert("Please select a customer for credit billing.");
+            showPopupMessage({
+                message: "Please select a customer for credit billing.",
+                variant: "error",
+            });
             return;
         }
 
         if (paymentMethod === "credit" && !creditTillDate) {
-            alert("Please select a Credit Till date for credit billing.");
+            showPopupMessage({
+                message: "Please select a Credit Till date for credit billing.",
+                variant: "error",
+            });
             return;
         }
 
@@ -193,7 +200,10 @@ export const SalesManager: React.FC = () => {
             }, 500);
         } catch (error) {
             console.error("Failed to generate invoice:", error);
-            alert("Failed to generate invoice. Please try again.");
+            showPopupMessage({
+                message: "Failed to generate invoice. Please try again.",
+                variant: "error",
+            });
         }
     };
 
