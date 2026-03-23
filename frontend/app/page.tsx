@@ -125,18 +125,24 @@ const testimonials = [
 
 /* ────────────────── Animated Counter ────────────── */
 
-function AnimatedCounter({ value, inView }: { value: string; inView: boolean }) {
+function AnimatedCounter({ value }: { value: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.5 });
+  const [displayed, setDisplayed] = useState(value);
+  const hasAnimated = useRef(false);
+
   const numericMatch = value.match(/^([\d.]+)(.*)$/);
-  const [displayed, setDisplayed] = useState("0");
 
   useEffect(() => {
-    if (!inView || !numericMatch) return;
+    if (!isInView || !numericMatch || hasAnimated.current) return;
+    hasAnimated.current = true;
+
     const target = parseFloat(numericMatch[1]);
     const suffix = numericMatch[2];
     const duration = 1500;
     const start = performance.now();
 
-    const animate = (now: number) => {
+    const tick = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
@@ -145,19 +151,18 @@ function AnimatedCounter({ value, inView }: { value: string; inView: boolean }) 
       if (target >= 100) {
         setDisplayed(Math.round(current).toLocaleString() + suffix);
       } else if (target >= 10) {
-        setDisplayed(current.toFixed(current === target ? 1 : 0) + suffix);
+        setDisplayed(current.toFixed(progress >= 1 ? 1 : 0) + suffix);
       } else {
         setDisplayed(current.toFixed(1) + suffix);
       }
 
-      if (progress < 1) requestAnimationFrame(animate);
+      if (progress < 1) requestAnimationFrame(tick);
     };
 
-    requestAnimationFrame(animate);
-  }, [inView, value]);
+    requestAnimationFrame(tick);
+  }, [isInView]);
 
-  if (!numericMatch) return <span>{value}</span>;
-  return <span>{displayed}</span>;
+  return <span ref={ref}>{displayed}</span>;
 }
 
 /* ────────────────── Main Page ────────────────── */
@@ -175,10 +180,6 @@ export default function Home() {
   useMotionValueEvent(scrollY, "change", (latest) => {
     setScrolled(latest > 50);
   });
-
-  // Section refs for animations
-  const statsRef = useRef(null);
-  const statsInView = useInView(statsRef, { once: true, amount: 0.3 });
 
   if (!isLoaded) return null;
 
@@ -487,7 +488,7 @@ export default function Home() {
       </section>
 
       {/* ─── Stats Bar ─── */}
-      <section ref={statsRef} className="py-16 border-y border-border bg-muted/30">
+      <section className="py-16 border-y border-border bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
             {stats.map((stat, i) => (
@@ -503,7 +504,7 @@ export default function Home() {
                   <stat.icon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <p className="text-3xl sm:text-4xl font-extrabold text-foreground mb-1">
-                  <AnimatedCounter value={stat.value} inView={statsInView} />
+                  <AnimatedCounter value={stat.value} />
                 </p>
                 <p className="text-sm text-muted-foreground font-medium">
                   {stat.label}
