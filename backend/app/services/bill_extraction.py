@@ -3,8 +3,8 @@ from collections import Counter
 
 
 def _build_ocr_model():
-    recog_model_path = r"D:\New folder (2)\SNPL_only\Batch_Code_Inspection_System_Pyqt5_updated\Default_models\rec"
-    det_model_path = r"D:\New folder (2)\SNPL_only\Batch_Code_Inspection_System_Pyqt5_updated\Default_models\det"
+    recog_model_path = r"../../Default_models/rec"
+    det_model_path = r"../../Default_models/det"
     return PaddleOCR(
         use_angle_cls=False,
         lang="en",
