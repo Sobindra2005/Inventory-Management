@@ -181,6 +181,12 @@ async def create_sale(request: Request, payload: CreateSaleRequest):
 
     # Calculate totals
     subtotal = sum(item["itemTotal"] for item in items_with_totals)
+    if payload.discount > subtotal:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Discount cannot exceed subtotal",
+        )
+
     total = subtotal - payload.discount
 
     # Create invoice

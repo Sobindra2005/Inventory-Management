@@ -27,7 +27,7 @@ class Invoice(BaseModel):
     items: list[CartItemWithTotal]
     subtotal: float = Field(ge=0)
     discount: float = Field(ge=0)
-    total: float = Field(ge=0)
+    total: float
     paymentMethod: str  # "cash" or "credit"
     customerId: str | None = None
     customerName: str | None = None
@@ -39,7 +39,7 @@ class Invoice(BaseModel):
 class SalesHistory(BaseModel):
     id: str
     invoiceId: str
-    total: float = Field(ge=0)
+    total: float
     paymentMethod: str  # "cash" or "credit"
     timestamp: str
     itemCount: int = Field(ge=0)

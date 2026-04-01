@@ -12,10 +12,10 @@ import {
 
 const getPopupStyles = (variant: PopupMessage["variant"]) => {
   if (variant === "error") {
-    return "border-destructive/30 bg-destructive/10 text-destructive";
+    return "border-red-300 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-100";
   }
 
-  return "border-border bg-card text-card-foreground";
+  return "border-slate-300 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
 };
 
 export function PopupMessageCenter() {
