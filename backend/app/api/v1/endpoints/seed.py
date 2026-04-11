@@ -17,9 +17,9 @@ router = APIRouter(prefix="/seed")
 
 class SeedDataRequest(BaseModel):
     """Request to seed data."""
-    num_products: int = Field(default=100, ge=50, le=500)
-    num_customers: int = Field(default=50, ge=10, le=200)
-    num_invoices: int = Field(default=150, ge=50, le=500)
+    num_products: int = Field(default=100, ge=0, le=500)
+    num_customers: int = Field(default=50, ge=0, le=200)
+    num_invoices: int = Field(default=150, ge=0, le=500)
 
 
 class SeedDataResponse(BaseModel):
@@ -94,40 +94,51 @@ async def seed_data(request: Request, payload: SeedDataRequest = SeedDataRequest
             await customers_col.delete_many({"userId": user_id})
             await sales_col.delete_many({"userId": user_id})
 
-        # Generate seed data
-        products_data = SeedDataGenerator.generate_bulk_products(
-            user_id, payload.num_products
-        )
-        customers_data = SeedDataGenerator.generate_bulk_customers(
-            user_id, payload.num_customers
-        )
+        products_created = 0
+        customers_created = 0
+        invoices_created = 0
 
-        # Bulk insert products
-        products_result = await inventory_col.insert_many(products_data)
-        product_ids = [str(oid) for oid in products_result.inserted_ids]
+        product_ids: list[str] = []
+        customer_ids: list[str] = []
 
-        # Bulk insert customers
-        customers_result = await customers_col.insert_many(customers_data)
-        customer_ids = [str(oid) for oid in customers_result.inserted_ids]
+        # Generate and bulk insert products (if requested)
+        if payload.num_products > 0:
+            products_data = SeedDataGenerator.generate_bulk_products(
+                user_id, payload.num_products
+            )
+            products_result = await inventory_col.insert_many(products_data)
+            products_created = len(products_result.inserted_ids)
+            product_ids = [str(oid) for oid in products_result.inserted_ids]
 
-        # Generate and bulk insert sales invoices
-        invoices_data = SeedDataGenerator.generate_bulk_sales_invoices(
-            user_id, product_ids, customer_ids, payload.num_invoices
-        )
-        invoices_result = await sales_col.insert_many(invoices_data)
+        # Generate and bulk insert customers (if requested)
+        if payload.num_customers > 0:
+            customers_data = SeedDataGenerator.generate_bulk_customers(
+                user_id, payload.num_customers
+            )
+            customers_result = await customers_col.insert_many(customers_data)
+            customers_created = len(customers_result.inserted_ids)
+            customer_ids = [str(oid) for oid in customers_result.inserted_ids]
 
-        total_records = (
-            len(products_result.inserted_ids)
-            + len(customers_result.inserted_ids)
-            + len(invoices_result.inserted_ids)
-        )
+        # Generate and bulk insert invoices only when products are available
+        if payload.num_invoices > 0 and product_ids:
+            invoices_data = SeedDataGenerator.generate_bulk_sales_invoices(
+                user_id, product_ids, customer_ids, payload.num_invoices
+            )
+            invoices_result = await sales_col.insert_many(invoices_data)
+            invoices_created = len(invoices_result.inserted_ids)
+
+        total_records = products_created + customers_created + invoices_created
+
+        message = f"Successfully seeded {total_records} records for user"
+        if payload.num_invoices > 0 and not product_ids:
+            message += ". Skipped invoice generation because no products were seeded"
 
         return SeedDataResponse(
             success=True,
-            message=f"Successfully seeded {total_records} records for user",
-            productsCreated=len(products_result.inserted_ids),
-            customersCreated=len(customers_result.inserted_ids),
-            invoicesCreated=len(invoices_result.inserted_ids),
+            message=message,
+            productsCreated=products_created,
+            customersCreated=customers_created,
+            invoicesCreated=invoices_created,
             totalRecords=total_records,
         )
 

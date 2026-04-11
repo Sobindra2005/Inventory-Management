@@ -181,6 +181,7 @@ export default function Sidebar() {
         },
         { icon: <Users className="w-5 h-5" />, label: "Customers", href: "/dashboard/customers" },
         { icon: <BarChart3 className="w-5 h-5" />, label: "Reports", href: "/dashboard/reports" },
+        { icon: <Settings className="w-5 h-5" />, label: "Settings", href: "/dashboard/settings" },
       ]
     },
     // {

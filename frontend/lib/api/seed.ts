@@ -43,9 +43,9 @@ export const seedApi = {
     numInvoices?: number;
   } = {}): Promise<SeedDataResponse> => {
     const response = await httpClient.post<SeedDataResponse>('/api/v1/seed', {
-      num_products: options.numProducts || 100,
-      num_customers: options.numCustomers || 50,
-      num_invoices: options.numInvoices || 150,
+      num_products: options.numProducts ?? 100,
+      num_customers: options.numCustomers ?? 50,
+      num_invoices: options.numInvoices ?? 150,
     });
     return response.data;
   },
