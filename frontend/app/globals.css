@@ -242,35 +242,82 @@ body {
 }
 
 @media print {
-  body.printing-invoice * {
+  html.printing-invoice body,
+  body.printing-invoice,
+  body[data-printing-invoice="true"] {
+    background: #ffffff !important;
+  }
+
+  html.printing-invoice body *,
+  body.printing-invoice *,
+  body[data-printing-invoice="true"] * {
     visibility: hidden !important;
   }
 
+  html.printing-invoice .invoice-print-backdrop,
+  body.printing-invoice .invoice-print-backdrop,
+  body[data-printing-invoice="true"] .invoice-print-backdrop {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  html.printing-invoice .invoice-print-area,
+  html.printing-invoice .invoice-print-area *,
   body.printing-invoice .invoice-print-area,
-  body.printing-invoice .invoice-print-area * {
+  body.printing-invoice .invoice-print-area *,
+  body[data-printing-invoice="true"] .invoice-print-area,
+  body[data-printing-invoice="true"] .invoice-print-area * {
+    visibility: hidden !important;
+  }
+
+  html.printing-invoice .invoice-print-root,
+  html.printing-invoice .invoice-print-root *,
+  body.printing-invoice .invoice-print-root,
+  body.printing-invoice .invoice-print-root *,
+  body[data-printing-invoice="true"] .invoice-print-root,
+  body[data-printing-invoice="true"] .invoice-print-root * {
+    visibility: hidden !important;
+  }
+
+  html.printing-invoice .invoice-print-root-active,
+  html.printing-invoice .invoice-print-root-active *,
+  body.printing-invoice .invoice-print-root-active,
+  body.printing-invoice .invoice-print-root-active *,
+  body[data-printing-invoice="true"] .invoice-print-root-active,
+  body[data-printing-invoice="true"] .invoice-print-root-active * {
     visibility: visible !important;
   }
 
-  body.printing-invoice .invoice-print-area {
+  html.printing-invoice .invoice-print-area,
+  body.printing-invoice .invoice-print-area,
+  body[data-printing-invoice="true"] .invoice-print-area {
+    display: none !important;
+  }
+
+  html.printing-invoice .invoice-print-root-active,
+  body.printing-invoice .invoice-print-root-active,
+  body[data-printing-invoice="true"] .invoice-print-root-active {
     position: fixed !important;
     inset: 0 !important;
-    transform: none !important;
-    max-width: none !important;
-    max-height: none !important;
     width: 100% !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
+    padding: 10mm !important;
     background: #ffffff !important;
-    overflow: visible !important;
     display: flex !important;
     align-items: flex-start !important;
     justify-content: center !important;
-    padding: 10mm !important;
+    z-index: 2147483647 !important;
   }
 
-  body.printing-invoice .invoice-receipt {
+  html.printing-invoice .invoice-receipt,
+  body.printing-invoice .invoice-receipt,
+  body[data-printing-invoice="true"] .invoice-receipt {
     width: min(360px, 100%) !important;
     box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
   }
+}
+
+.invoice-print-root {
+  display: none;
 }

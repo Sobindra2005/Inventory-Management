@@ -35,15 +35,34 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
       return;
     }
 
+    const printRoot = document.createElement("div");
+    printRoot.className = "invoice-print-root invoice-print-root-active";
+    const receiptClone = receiptRef.current.cloneNode(true) as HTMLElement;
+    printRoot.appendChild(receiptClone);
+    document.body.appendChild(printRoot);
+
+    document.documentElement.classList.add("printing-invoice");
     document.body.classList.add("printing-invoice");
+    document.body.setAttribute("data-printing-invoice", "true");
 
     const cleanup = () => {
+      document.documentElement.classList.remove("printing-invoice");
       document.body.classList.remove("printing-invoice");
+      document.body.removeAttribute("data-printing-invoice");
+      if (printRoot.parentNode) {
+        printRoot.parentNode.removeChild(printRoot);
+      }
       window.removeEventListener("afterprint", cleanup);
     };
 
     window.addEventListener("afterprint", cleanup);
-    window.print();
+
+    // Let the browser apply print-only classes before opening print preview.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.print();
+      });
+    });
   };
 
   const handleDownloadPDF = async () => {
@@ -115,7 +134,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/50 z-40 print:hidden"
+          className="invoice-print-backdrop fixed inset-0 bg-black/50 z-40 print:hidden"
         />
 
         {/* Modal */}
@@ -282,6 +301,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             </button>
           </div>
         </motion.div>
+
       </>
     </AnimatePresence>
   );
