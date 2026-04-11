@@ -13,6 +13,9 @@ import {
   useGenerateReport,
   useDownloadReport,
 } from "@/lib/queries/use-dashboard-query";
+import { useOnboarding } from "@/lib/hooks/use-onboarding";
+import { OnboardingSampleDataDialog } from "@/components/onboarding/sample-data-dialog";
+import { PostSeedingDialog } from "@/components/onboarding/post-seeding-dialog";
 import { KPICard } from "@/components/dashboard/kpi-card";
 import { LowStockSection } from "@/components/dashboard/low-stock-section";
 import { GenerateReportForm } from "@/components/dashboard/generate-report-form";
@@ -25,6 +28,23 @@ export default function DashboardPage() {
   const reportsQuery = useReports(10);
   const generateReportMutation = useGenerateReport();
   const downloadReportMutation = useDownloadReport();
+
+  // Onboarding flow
+  const onboarding = useOnboarding({
+    autoShow: true,
+    seedOptions: {
+      numProducts: 100,
+      numCustomers: 50,
+      numInvoices: 150,
+    },
+    onComplete: (seedingData) => {
+      if (seedingData) {
+        console.log("Onboarding complete with seeded data:", seedingData);
+      } else {
+        console.log("Onboarding complete without seeded data");
+      }
+    },
+  });
 
   const isLoading = dashboardQuery.isLoading || lowStockQuery.isLoading;
   const isError = dashboardQuery.isError || lowStockQuery.isError;
@@ -169,6 +189,29 @@ export default function DashboardPage() {
           />
         </div>
       </div>
+
+      {/* Onboarding Dialogs */}
+      <OnboardingSampleDataDialog
+        open={onboarding.showInitialDialog}
+        onConfirm={onboarding.handleSeedConfirm}
+        onDecline={onboarding.handleSeedDecline}
+        isLoading={onboarding.isLoading}
+      />
+
+      <PostSeedingDialog
+        open={onboarding.showPostSeedingDialog}
+        seedingSummary={
+          onboarding.seedingData ? {
+            productsCreated: onboarding.seedingData.productsCreated,
+            customersCreated: onboarding.seedingData.customersCreated,
+            invoicesCreated: onboarding.seedingData.invoicesCreated,
+            totalRecords: onboarding.seedingData.totalRecords,
+          } : undefined
+        }
+        onKeep={onboarding.handleKeepData}
+        onDiscard={onboarding.handleDiscardData}
+        isLoading={onboarding.isLoading}
+      />
     </div>
   );
 }
