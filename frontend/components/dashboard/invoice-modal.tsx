@@ -27,6 +27,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   errorMessage = null,
   onClose,
 }) => {
+
+  console.log("Rendering InvoiceModal with invoice:", invoice);
   const receiptRef = useRef<HTMLDivElement>(null);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 

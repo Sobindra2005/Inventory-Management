@@ -301,12 +301,7 @@ async def get_invoice(invoice_id: str, request: Request):
 
     sales_col = database["sales_invoices"]
 
-    try:
-        object_id = ObjectId(invoice_id)
-    except InvalidId:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found")
-
-    document = await sales_col.find_one({"_id": object_id, "userId": user_id})
+    document = await sales_col.find_one({"invoiceId": invoice_id, "userId": user_id})
     if document is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found")
 

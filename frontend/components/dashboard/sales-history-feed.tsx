@@ -25,6 +25,8 @@ export const SalesHistoryFeed: React.FC<SalesHistoryProps> = ({ sales }) => {
     isError: isInvoiceError,
   } = useInvoice(selectedInvoiceId ?? "");
 
+  console.log("SalesHistoryFeed rendered with sales:", selectedInvoice);
+
   // Group sales by date
   const groupedSales = useMemo(() => {
     const now = new Date();
