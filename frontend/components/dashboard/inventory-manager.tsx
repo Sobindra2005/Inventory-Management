@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "motion/react";
-import { Search, ChevronDown } from "lucide-react";
+import { Search } from "lucide-react";
 import {
     addInventoryProductDefaults,
     addInventoryProductSchema,
@@ -19,94 +19,10 @@ import {
     useUpdateInventoryStock,
 } from "@/lib/queries/use-inventory-query";
 import { requestPopupConfirm } from "@/lib/ui/popup-message";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { CustomSelect } from "@/components/ui/custom-select";
 
 const formatPrice = (value: number) => `Rs.${value.toFixed(2)}`;
-
-interface CustomSelectProps {
-    value: string;
-    onChange: (value: string) => void;
-    options: string[];
-    placeholder?: string;
-    label?: string;
-}
-
-const CustomSelect: React.FC<CustomSelectProps> = ({
-    value,
-    onChange,
-    options,
-    placeholder = "Select...",
-    label,
-}) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    const displayLabel =
-        value === "all" ? "All Categories" : options.find((opt) => opt === value) || placeholder;
-
-    return (
-        <div className="relative" ref={dropdownRef}>
-            {label && (
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    {label}
-                </label>
-            )}
-            <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-full h-10 px-4 bg-muted/30 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all text-left flex items-center justify-between hover:bg-muted/50 text-foreground"
-            >
-                <span className="text-sm">{displayLabel}</span>
-                <ChevronDown
-                    className="w-4 h-4 text-muted-foreground transition-transform"
-                    style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
-                />
-            </button>
-
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-10 overflow-hidden"
-                    >
-                        {options.map((option) => (
-                            <button
-                                key={option}
-                                type="button"
-                                onClick={() => {
-                                    onChange(option);
-                                    setIsOpen(false);
-                                }}
-                                className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                                    value === option
-                                        ? "bg-primary/10 text-primary font-medium"
-                                        : "text-foreground hover:bg-accent"
-                                }`}
-                            >
-                                {option === "all" ? "All Categories" : option}
-                            </button>
-                        ))}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-    );
-};
-
 
 export const InventoryManager: React.FC = () => {
     const inventoryQuery = useInventoryList();
@@ -140,9 +56,12 @@ export const InventoryManager: React.FC = () => {
         }
     }, [inventoryQuery.data]);
 
-    const categories = useMemo(() => {
+    const categoryOptions = useMemo(() => {
         const unique = new Set(products.map((item) => item.category));
-        return ["all", ...Array.from(unique)];
+        return [
+            { value: "all", label: "All Categories" },
+            ...Array.from(unique).map((category) => ({ value: category, label: category })),
+        ];
     }, [products]);
 
     const filteredProducts = useMemo(() => {
@@ -300,6 +219,107 @@ export const InventoryManager: React.FC = () => {
         reset(addInventoryProductDefaults);
     };
 
+    const inventoryColumns = useMemo<DataTableColumn<InventoryProduct>[]>(
+        () => [
+            {
+                id: "name",
+                header: "Product Name",
+                cell: (product) => (
+                    <div className="flex flex-col">
+                        <span className="font-medium">{product.name}</span>
+                        <span className="text-xs text-muted-foreground">{product.barcode}</span>
+                    </div>
+                ),
+            },
+            {
+                id: "stock",
+                header: "Stock",
+                cell: (product) => {
+                    const isLowStock = product.stock <= product.lowStockThreshold;
+                    const isInlineEditing = editingStockId === product.id;
+
+                    if (isInlineEditing) {
+                        return (
+                            <input
+                                autoFocus
+                                type="number"
+                                min={0}
+                                value={inlineStockValue}
+                                onChange={(event) => setInlineStockValue(event.target.value)}
+                                onBlur={() => commitInlineStock(product.id)}
+                                onKeyDown={(event) => {
+                                    if (event.key === "Enter") {
+                                        event.preventDefault();
+                                        commitInlineStock(product.id);
+                                    }
+                                    if (event.key === "Escape") {
+                                        setEditingStockId(null);
+                                    }
+                                }}
+                                className="w-20 rounded-md border border-input bg-background px-2 py-1 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50"
+                            />
+                        );
+                    }
+
+                    return (
+                        <button
+                            type="button"
+                            onClick={() => startInlineStockEdit(product)}
+                            className={`rounded-md px-2 py-1 text-sm font-medium transition-colors ${
+                                isLowStock
+                                    ? "bg-destructive/15 text-destructive hover:bg-destructive/20"
+                                    : "bg-muted text-foreground hover:bg-accent"
+                            }`}
+                            title="Click to edit stock inline"
+                        >
+                            {product.stock}
+                        </button>
+                    );
+                },
+            },
+            {
+                id: "price",
+                header: "Price",
+                cell: (product) => formatPrice(product.price),
+            },
+            {
+                id: "category",
+                header: "Category",
+                cell: (product) => <span className="text-muted-foreground">{product.category}</span>,
+            },
+            {
+                id: "actions",
+                header: "Actions",
+                cell: (product) => (
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => handleEdit(product)}
+                            className="rounded-md border border-border px-2 py-1 text-xs hover:bg-accent"
+                        >
+                            Edit
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleDelete(product.id)}
+                            className="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive/20"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                ),
+            },
+        ],
+        [
+            commitInlineStock,
+            editingStockId,
+            handleDelete,
+            handleEdit,
+            inlineStockValue,
+            startInlineStockEdit,
+        ],
+    );
+
     return (
         <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
@@ -315,11 +335,18 @@ export const InventoryManager: React.FC = () => {
                 </div>
             )}
 
-            <div className="rounded-2xl border border-border bg-card text-card-foreground p-4 md:p-6">
-                <div className="flex flex-col gap-3">
-                    {/* Search and Filters Row */}
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-3">
-                        {/* Search Input */}
+            <DataTable
+                title="Inventory Products"
+                subtitle="Easy to view, edit, and control stock."
+                columns={inventoryColumns}
+                rows={filteredProducts}
+                rowKey={(product) => product.id}
+                isLoading={inventoryQuery.isLoading}
+                loadingMessage="Loading inventory..."
+                emptyMessage="No products match your filters."
+                minWidthClassName="min-w-[760px]"
+                filters={(
+                    <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-end lg:gap-3">
                         <div className="flex-1">
                             <label className="mb-2 block text-xs font-medium text-muted-foreground">
                                 Search
@@ -337,19 +364,15 @@ export const InventoryManager: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Category Select */}
                         <div className="w-full lg:w-48">
                             <CustomSelect
                                 label="Category"
                                 value={selectedCategory}
                                 onChange={setSelectedCategory}
-                                options={categories}
+                                options={categoryOptions}
                             />
                         </div>
-                    </div>
 
-                    {/* Low Stock and Add Button Row */}
-                    <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/30 px-4 py-2.5 h-10">
                             <input
                                 id="low-stock-only"
@@ -362,37 +385,37 @@ export const InventoryManager: React.FC = () => {
                                 Low stock only
                             </label>
                         </div>
-
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (isFormOpen && !editingProductId) {
-                                    closeForm();
-                                } else {
-                                    reset(addInventoryProductDefaults);
-                                    setEditingProductId(null);
-                                    setIsFormOpen(true);
-                                }
-                            }}
-                            className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity h-10"
-                        >
-                            Add Product
-                        </button>
                     </div>
-                </div>
-
-                {/* Form with Animation */}
-                <AnimatePresence>
-                    {isFormOpen && (
-                        <motion.form
-                            onSubmit={handleSubmit(onAddOrEditSubmit)}
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="mt-5 overflow-hidden"
-                        >
-                            <div className="grid gap-3 border-t border-border pt-5 px-2 md:grid-cols-2 lg:grid-cols-3">
+                )}
+                actions={(
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (isFormOpen && !editingProductId) {
+                                closeForm();
+                            } else {
+                                reset(addInventoryProductDefaults);
+                                setEditingProductId(null);
+                                setIsFormOpen(true);
+                            }
+                        }}
+                        className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                    >
+                        Add Product
+                    </button>
+                )}
+                beforeTable={(
+                    <AnimatePresence>
+                        {isFormOpen && (
+                            <motion.form
+                                onSubmit={handleSubmit(onAddOrEditSubmit)}
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="grid gap-3 border-t border-border px-2 pt-5 md:grid-cols-2 lg:grid-cols-3">
                                 <div>
                                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
                                         Product Name
@@ -496,128 +519,12 @@ export const InventoryManager: React.FC = () => {
                                         {editingProductId ? "Save Changes" : "Add Product"}
                                     </button>
                                 </div>
-                            </div>
-                        </motion.form>
-                    )}
-                </AnimatePresence>
-            </div>
-
-            <div className="rounded-2xl border border-border bg-card text-card-foreground p-4 md:p-6">
-                <div className="overflow-x-auto">
-                    <table className="w-full min-w-[760px]">
-                        <thead>
-                            <tr className="border-b border-border">
-                                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                    Product Name
-                                </th>
-                                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                    Stock
-                                </th>
-                                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                    Price
-                                </th>
-                                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                    Category
-                                </th>
-                                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border">
-                            {inventoryQuery.isLoading && (
-                                <tr>
-                                    <td colSpan={5} className="px-3 py-6 text-sm text-muted-foreground">
-                                        Loading inventory...
-                                    </td>
-                                </tr>
-                            )}
-
-                            {!inventoryQuery.isLoading && filteredProducts.length === 0 && (
-                                <tr>
-                                    <td colSpan={5} className="px-3 py-6 text-sm text-muted-foreground">
-                                        No products match your filters.
-                                    </td>
-                                </tr>
-                            )}
-
-                            {filteredProducts.map((product) => {
-                                const isLowStock = product.stock <= product.lowStockThreshold;
-                                const isInlineEditing = editingStockId === product.id;
-
-                                return (
-                                    <tr key={product.id} className="hover:bg-accent/40">
-                                        <td className="px-3 py-3 text-sm font-medium">
-                                            <div className="flex flex-col">
-                                                <span>{product.name}</span>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {product.barcode}
-                                                </span>
-                                            </div>
-                                        </td>
-
-                                        <td className="px-3 py-3 text-sm">
-                                            {isInlineEditing ? (
-                                                <input
-                                                    autoFocus
-                                                    type="number"
-                                                    min={0}
-                                                    value={inlineStockValue}
-                                                    onChange={(event) => setInlineStockValue(event.target.value)}
-                                                    onBlur={() => commitInlineStock(product.id)}
-                                                    onKeyDown={(event) => {
-                                                        if (event.key === "Enter") {
-                                                            event.preventDefault();
-                                                            commitInlineStock(product.id);
-                                                        }
-                                                        if (event.key === "Escape") {
-                                                            setEditingStockId(null);
-                                                        }
-                                                    }}
-                                                    className="w-20 rounded-md border border-input bg-background px-2 py-1 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50"
-                                                />
-                                            ) : (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => startInlineStockEdit(product)}
-                                                    className={`rounded-md px-2 py-1 text-sm font-medium transition-colors ${isLowStock
-                                                            ? "bg-destructive/15 text-destructive hover:bg-destructive/20"
-                                                            : "bg-muted text-foreground hover:bg-accent"
-                                                        }`}
-                                                    title="Click to edit stock inline"
-                                                >
-                                                    {product.stock}
-                                                </button>
-                                            )}
-                                        </td>
-
-                                        <td className="px-3 py-3 text-sm">{formatPrice(product.price)}</td>
-                                        <td className="px-3 py-3 text-sm text-muted-foreground">{product.category}</td>
-                                        <td className="px-3 py-3 text-sm">
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleEdit(product)}
-                                                    className="rounded-md border border-border px-2 py-1 text-xs hover:bg-accent"
-                                                >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDelete(product.id)}
-                                                    className="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-xs text-destructive hover:bg-destructive/20"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                                </div>
+                            </motion.form>
+                        )}
+                    </AnimatePresence>
+                )}
+            />
         </div>
     );
 };

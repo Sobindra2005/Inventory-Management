@@ -5,9 +5,10 @@ import { AlertTriangle, CalendarClock, IndianRupee, Search, Users } from "lucide
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCustomerCreditList, useUpdateCreditLedgerDetails } from "@/lib/queries/use-customers-credit-query";
-import type { CreditStatus } from "@/lib/contracts/customers";
+import type { CreditStatus, CustomerCreditProfile } from "@/lib/contracts/customers";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { KPICard } from "@/components/dashboard/kpi-card";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import {
   updateCreditLedgerDefaults,
   updateCreditLedgerSchema,
@@ -203,6 +204,84 @@ export const CustomersCreditManager: React.FC = () => {
     },
   ];
 
+  const customerColumns = useMemo<DataTableColumn<CustomerCreditProfile>[]>(
+    () => [
+      {
+        id: "customer",
+        header: "Customer",
+        cell: (customer) => (
+          <div className="flex flex-col">
+            <span className="font-medium text-foreground">{customer.name}</span>
+            <span className="text-xs text-muted-foreground">{customer.phone || customer.email || "-"}</span>
+          </div>
+        ),
+      },
+      {
+        id: "status",
+        header: "Status",
+        cell: (customer) => (
+          <span className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${statusClasses[customer.status]}`}>
+            {customer.status}
+          </span>
+        ),
+      },
+      {
+        id: "outstanding",
+        header: "Outstanding",
+        cell: (customer) => <span className="font-semibold text-foreground">{formatMoney(customer.outstandingCredit)}</span>,
+      },
+      {
+        id: "totalCredit",
+        header: "Total Credit",
+        cell: (customer) => <span className="text-muted-foreground">{formatMoney(customer.totalCreditIssued)}</span>,
+      },
+      {
+        id: "creditInvoices",
+        header: "Credit Invoices",
+        cell: (customer) => <span className="text-muted-foreground">{customer.totalCreditInvoices}</span>,
+      },
+      {
+        id: "lastCreditTime",
+        header: "Last Credit Time",
+        cell: (customer) => <span className="text-muted-foreground">{formatDateTime(customer.lastCreditAt)}</span>,
+      },
+      {
+        id: "creditTill",
+        header: "Credit Till",
+        cell: (customer) => <span className="text-muted-foreground">{formatDate(customer.creditUntil)}</span>,
+      },
+      {
+        id: "lastCleared",
+        header: "Last Cleared",
+        cell: (customer) => <span className="text-muted-foreground">{formatDateTime(customer.lastCreditClearedAt)}</span>,
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: (customer) => (
+          <button
+            type="button"
+            onClick={() => {
+              openEditModal(customer.id, {
+                status: customer.status,
+                outstandingCredit: customer.outstandingCredit,
+                totalCreditIssued: customer.totalCreditIssued,
+                totalCreditInvoices: customer.totalCreditInvoices,
+                creditUntil: customer.creditUntil,
+                lastCreditAt: customer.lastCreditAt,
+                lastCreditClearedAt: customer.lastCreditClearedAt,
+              });
+            }}
+            className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Update Ledger
+          </button>
+        ),
+      },
+    ],
+    [openEditModal],
+  );
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
@@ -229,109 +308,44 @@ export const CustomersCreditManager: React.FC = () => {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-border bg-card text-card-foreground p-4 md:p-6">
-        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div className="w-full lg:max-w-xl">
-            <label className="mb-2 block text-xs font-medium text-muted-foreground">Search customer</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-muted-foreground" />
+      <DataTable
+        title="Customer Credit Ledger"
+        subtitle="Search and filter customer credit records."
+        columns={customerColumns}
+        rows={filteredCustomers}
+        rowKey={(customer) => customer.id}
+        isLoading={customerCreditQuery.isLoading}
+        loadingMessage="Loading customers..."
+        emptyMessage="No customers match your filters."
+        minWidthClassName="min-w-[1200px]"
+        filters={(
+          <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-end">
+            <div className="w-full lg:min-w-90">
+              <label className="mb-2 block text-xs font-medium text-muted-foreground">Search customer</label>
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Name, phone, email"
+                  className="h-10 w-full rounded-xl border border-border bg-muted/30 pl-10 pr-4 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                />
               </div>
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Name, phone, email"
-                className="h-10 w-full rounded-xl border border-border bg-muted/30 pl-10 pr-4 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            </div>
+
+            <div className="w-full lg:w-52">
+              <CustomSelect
+                label="Credit status"
+                value={statusFilter}
+                onChange={(value) => setStatusFilter(value as "all" | CreditStatus)}
+                options={creditStatusOptions}
               />
             </div>
           </div>
-
-          <div className="w-full lg:w-52">
-            <CustomSelect
-              label="Credit status"
-              value={statusFilter}
-              onChange={(value) => setStatusFilter(value as "all" | CreditStatus)}
-              options={creditStatusOptions}
-            />
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-280">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Customer</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Outstanding</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Total Credit</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Credit Invoices</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Last Credit Time</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Credit Till</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Last Cleared</th>
-                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {customerCreditQuery.isLoading && (
-                <tr>
-                  <td colSpan={9} className="px-3 py-6 text-sm text-muted-foreground">
-                    Loading customers...
-                  </td>
-                </tr>
-              )}
-
-              {!customerCreditQuery.isLoading && filteredCustomers.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-3 py-6 text-sm text-muted-foreground">
-                    No customers match your filters.
-                  </td>
-                </tr>
-              )}
-
-              {filteredCustomers.map((customer) => (
-                <tr key={customer.id} className="hover:bg-accent/40">
-                  <td className="px-3 py-3">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-foreground">{customer.name}</span>
-                      <span className="text-xs text-muted-foreground">{customer.phone || customer.email || "-"}</span>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3 text-sm">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${statusClasses[customer.status]}`}>
-                      {customer.status}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 text-sm font-semibold text-foreground">{formatMoney(customer.outstandingCredit)}</td>
-                  <td className="px-3 py-3 text-sm text-muted-foreground">{formatMoney(customer.totalCreditIssued)}</td>
-                  <td className="px-3 py-3 text-sm text-muted-foreground">{customer.totalCreditInvoices}</td>
-                  <td className="px-3 py-3 text-sm text-muted-foreground">{formatDateTime(customer.lastCreditAt)}</td>
-                  <td className="px-3 py-3 text-sm text-muted-foreground">{formatDate(customer.creditUntil)}</td>
-                  <td className="px-3 py-3 text-sm text-muted-foreground">{formatDateTime(customer.lastCreditClearedAt)}</td>
-                  <td className="px-3 py-3 text-sm text-muted-foreground">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        openEditModal(customer.id, {
-                          status: customer.status,
-                          outstandingCredit: customer.outstandingCredit,
-                          totalCreditIssued: customer.totalCreditIssued,
-                          totalCreditInvoices: customer.totalCreditInvoices,
-                          creditUntil: customer.creditUntil,
-                          lastCreditAt: customer.lastCreditAt,
-                          lastCreditClearedAt: customer.lastCreditClearedAt,
-                        });
-                      }}
-                      className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Update Ledger
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+        )}
+      />
 
       {editingLedgerId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
