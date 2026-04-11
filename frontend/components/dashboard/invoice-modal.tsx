@@ -210,7 +210,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                           <td className="text-right">{item.quantity}</td>
                           <td className="text-right">${item.price.toFixed(2)}</td>
                           <td className="text-right font-semibold">
-                            ${item.itemTotal.toFixed(2)}
+                            Rs.{item.itemTotal.toFixed(2)}
                           </td>
                         </tr>
                       ))}
@@ -222,17 +222,17 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 <div className="space-y-1 text-xs border-b border-dashed pb-3" style={{ borderBottomColor: "rgba(0, 0, 0, 0.4)" }}>
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
-                    <span>${invoice.subtotal.toFixed(2)}</span>
+                    <span>Rs.{invoice.subtotal.toFixed(2)}</span>
                   </div>
                   {invoice.discount > 0 && (
                     <div className="flex justify-between text-green-600">
                       <span>Discount:</span>
-                      <span>-${invoice.discount.toFixed(2)}</span>
+                      <span>Rs.{invoice.discount.toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-bold text-sm pt-1">
                     <span>Total:</span>
-                    <span>${invoice.total.toFixed(2)}</span>
+                    <span>Rs.{invoice.total.toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -245,7 +245,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                     <>
                       <p>Customer: {invoice.customerName}</p>
                       {invoice.dueAmount !== undefined && (
-                        <p>Due Amount: ${invoice.dueAmount.toFixed(2)}</p>
+                        <p>Due Amount: Rs.{invoice.dueAmount.toFixed(2)}</p>
                       )}
                       {invoice.creditUntil && (
                         <p>Credit Till: {new Date(invoice.creditUntil).toLocaleDateString("en-US")}</p>
