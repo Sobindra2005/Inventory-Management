@@ -18,6 +18,7 @@ import {
 import { CustomSelect } from "@/components/ui/custom-select";
 import { useInventoryList } from "@/lib/queries/use-inventory-query";
 import { useSalesHistory, useCreateSale, useCustomers, useCreateCustomer } from "@/lib/queries/use-sales-query";
+import { fetchInvoice } from "@/lib/api/sales";
 import { InvoiceModal } from "./invoice-modal";
 import { SalesHistoryFeed } from "./sales-history-feed";
 import type { CartItem, CartItemWithTotal, Invoice } from "@/lib/contracts/sales";
@@ -186,7 +187,9 @@ export const SalesManager: React.FC = () => {
                 creditUntil: paymentMethod === "credit" ? creditTillDate : undefined,
             });
 
-            setGeneratedInvoice(response.invoice);
+            // Always load the final bill from the invoice endpoint so line items are source-of-truth.
+            const invoiceFromEndpoint = await fetchInvoice(response.invoice.invoiceId);
+            setGeneratedInvoice(invoiceFromEndpoint);
             setShowInvoiceModal(true);
 
             // Clear cart after successful invoice
@@ -200,8 +203,21 @@ export const SalesManager: React.FC = () => {
             }, 500);
         } catch (error) {
             console.error("Failed to generate invoice:", error);
+            const message =
+                typeof error === "object" &&
+                    error !== null &&
+                    "response" in error &&
+                    typeof error.response === "object" &&
+                    error.response !== null &&
+                    "data" in error.response &&
+                    typeof error.response.data === "object" &&
+                    error.response.data !== null &&
+                    "detail" in error.response.data &&
+                    typeof error.response.data.detail === "string"
+                    ? error.response.data.detail
+                    : "Failed to generate invoice. Please try again.";
             showPopupMessage({
-                message: "Failed to generate invoice. Please try again.",
+                message,
                 variant: "error",
             });
         }

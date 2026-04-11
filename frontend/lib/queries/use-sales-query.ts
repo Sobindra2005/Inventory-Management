@@ -83,13 +83,7 @@ export function useCreateSale() {
 export function useInvoice(invoiceId: string) {
   return useQuery({
     queryKey: ["invoice", invoiceId],
-    queryFn: async () => {
-      return withSalesFallback(
-        () => fetchInvoice(invoiceId),
-        invoiceSampleData,
-        `Invoice ${invoiceId}`
-      );
-    },
+    queryFn: async () => fetchInvoice(invoiceId),
     staleTime: 60 * 1000, // 1 minute
     enabled: !!invoiceId,
   });

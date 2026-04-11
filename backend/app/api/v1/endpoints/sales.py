@@ -4,7 +4,7 @@ import uuid
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import APIRouter, HTTPException, Request, Response, status
-
+import logging
 from app.api.deps import get_mongo_db
 from app.core.config import settings
 from app.schemas.sales import (
@@ -18,6 +18,8 @@ from app.schemas.sales import (
 
 router = APIRouter(prefix="/sales")
 
+
+logger = logging.getLogger(__name__)
 
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
@@ -300,9 +302,13 @@ async def get_invoice(invoice_id: str, request: Request):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database unavailable")
 
     sales_col = database["sales_invoices"]
-
-    document = await sales_col.find_one({"invoiceId": invoice_id, "userId": user_id})
+    logger.info("Fetching invoice data")
+    normalized_invoice_id = invoice_id.strip()
+    document = await sales_col.find_one({"invoiceId": normalized_invoice_id, "userId": user_id})
     if document is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Invoice {normalized_invoice_id} not found for current user",
+        )
 
     return _to_invoice(document)

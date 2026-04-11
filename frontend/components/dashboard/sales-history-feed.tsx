@@ -8,6 +8,7 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Calendar, TrendingUp, CreditCard, Wallet } from "lucide-react";
+import type { AxiosError } from "axios";
 import type { SalesHistory } from "@/lib/contracts/sales";
 import { InvoiceModal } from "./invoice-modal";
 import { useInvoice } from "@/lib/queries/use-sales-query";
@@ -23,9 +24,8 @@ export const SalesHistoryFeed: React.FC<SalesHistoryProps> = ({ sales }) => {
     data: selectedInvoice,
     isLoading: isInvoiceLoading,
     isError: isInvoiceError,
+    error: invoiceError,
   } = useInvoice(selectedInvoiceId ?? "");
-
-  console.log("SalesHistoryFeed rendered with sales:", selectedInvoice);
 
   // Group sales by date
   const groupedSales = useMemo(() => {
@@ -67,9 +67,28 @@ export const SalesHistoryFeed: React.FC<SalesHistoryProps> = ({ sales }) => {
   }, [sales]);
 
   const handleSaleClick = (invoiceId: string) => {
-    setSelectedInvoiceId(invoiceId);
+    setSelectedInvoiceId(invoiceId.trim());
     setIsModalOpen(true);
   };
+
+  const invoiceErrorMessage = (() => {
+    if (!isInvoiceError) {
+      return null;
+    }
+
+    const axiosError = invoiceError as AxiosError<{ detail?: string }>;
+    const detail = axiosError.response?.data?.detail;
+
+    if (detail) {
+      return detail;
+    }
+
+    if (selectedInvoiceId) {
+      return `Invoice ${selectedInvoiceId} not found for this account.`;
+    }
+
+    return "Failed to load invoice details.";
+  })();
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -250,7 +269,7 @@ export const SalesHistoryFeed: React.FC<SalesHistoryProps> = ({ sales }) => {
         invoice={selectedInvoice ?? null}
         isOpen={isModalOpen}
         isLoading={isInvoiceLoading}
-        errorMessage={isInvoiceError ? "Failed to load invoice details." : null}
+        errorMessage={invoiceErrorMessage}
         onClose={() => {
           setIsModalOpen(false);
           setSelectedInvoiceId(null);

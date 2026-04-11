@@ -9,6 +9,7 @@ import type {
   CreateSaleResponse,
   SalesHistoryResponse,
   CreateCustomerRequest,
+  Invoice,
   Customer,
 } from "@/lib/contracts/sales";
 
@@ -31,7 +32,7 @@ export async function createSale(payload: CreateSaleRequest): Promise<CreateSale
 /**
  * Fetch a specific invoice by ID
  */
-export async function fetchInvoice(invoiceId: string) {
+export async function fetchInvoice(invoiceId: string): Promise<Invoice> {
   const response = await httpClient.get(`/api/v1/sales/invoices/${invoiceId}`);
   return response.data;
 }
