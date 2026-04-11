@@ -2,10 +2,18 @@
 
 import React, { useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, IndianRupee, Search, Users } from "lucide-react";
-import { useCustomerCreditList } from "@/lib/queries/use-customers-credit-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useCustomerCreditList, useUpdateCreditLedgerDetails } from "@/lib/queries/use-customers-credit-query";
 import type { CreditStatus } from "@/lib/contracts/customers";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { KPICard } from "@/components/dashboard/kpi-card";
+import {
+  updateCreditLedgerDefaults,
+  updateCreditLedgerSchema,
+  type UpdateCreditLedgerFormData,
+} from "@/lib/forms/customers";
+import { requestPopupConfirm, showPopupMessage } from "@/lib/ui/popup-message";
 
 const formatMoney = (value: number) => `Rs.${value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 
@@ -29,6 +37,26 @@ const formatDate = (value?: string) => {
   });
 };
 
+const toDateInputValue = (value?: string) => {
+  if (!value) return "";
+  return value.slice(0, 10);
+};
+
+const toDateTimeInputValue = (value?: string) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const pad = (num: number) => String(num).padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 const statusClasses: Record<CreditStatus, string> = {
   clear: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
   due: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
@@ -44,8 +72,24 @@ const creditStatusOptions: Array<{ value: "all" | CreditStatus; label: string }>
 
 export const CustomersCreditManager: React.FC = () => {
   const customerCreditQuery = useCustomerCreditList();
+  const updateLedgerMutation = useUpdateCreditLedgerDetails();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | CreditStatus>("all");
+  const [editingLedgerId, setEditingLedgerId] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<UpdateCreditLedgerFormData>({
+    resolver: zodResolver(updateCreditLedgerSchema),
+    defaultValues: updateCreditLedgerDefaults,
+  });
+
+  const selectedEditStatus = watch("status");
 
   const summary = customerCreditQuery.data?.summary;
   const customers = customerCreditQuery.data?.customers ?? [];
@@ -64,6 +108,73 @@ export const CustomersCreditManager: React.FC = () => {
       return matchesSearch && matchesStatus;
     });
   }, [customers, search, statusFilter]);
+
+  const editingCustomer = useMemo(
+    () => filteredCustomers.find((customer) => customer.id === editingLedgerId) ?? null,
+    [editingLedgerId, filteredCustomers],
+  );
+
+  const openEditModal = (ledgerId: string, values: {
+    status: CreditStatus;
+    outstandingCredit: number;
+    totalCreditIssued: number;
+    totalCreditInvoices: number;
+    creditUntil?: string;
+    lastCreditAt?: string;
+    lastCreditClearedAt?: string;
+  }) => {
+    setEditingLedgerId(ledgerId);
+    reset({
+      status: values.status,
+      outstandingCredit: values.outstandingCredit,
+      totalCreditIssued: values.totalCreditIssued,
+      totalCreditInvoices: values.totalCreditInvoices,
+      creditUntil: toDateInputValue(values.creditUntil),
+      lastCreditAt: toDateTimeInputValue(values.lastCreditAt),
+      lastCreditClearedAt: toDateTimeInputValue(values.lastCreditClearedAt),
+    });
+  };
+
+  const closeEditModal = () => {
+    setEditingLedgerId(null);
+    reset(updateCreditLedgerDefaults);
+  };
+
+  const onSubmitLedgerUpdate = async (data: UpdateCreditLedgerFormData) => {
+    if (!editingLedgerId) {
+      return;
+    }
+
+    const confirmed = await requestPopupConfirm({
+      title: "Update Credit Ledger",
+      message: "Save credit ledger changes?",
+      confirmLabel: "Save",
+      cancelLabel: "Cancel",
+    });
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await updateLedgerMutation.mutateAsync({
+        ledgerId: editingLedgerId,
+        payload: {
+          status: data.status,
+          outstandingCredit: data.outstandingCredit,
+          totalCreditIssued: data.totalCreditIssued,
+          totalCreditInvoices: data.totalCreditInvoices,
+          creditUntil: data.creditUntil || null,
+          lastCreditAt: data.lastCreditAt || null,
+          lastCreditClearedAt: data.lastCreditClearedAt || null,
+        },
+      });
+      showPopupMessage({ message: "Credit ledger updated.", variant: "info" });
+      closeEditModal();
+    } catch (error) {
+      console.error("Failed to update credit ledger:", error);
+      showPopupMessage({ message: "Failed to update credit ledger.", variant: "error" });
+    }
+  };
 
   const kpis = [
     {
@@ -146,7 +257,7 @@ export const CustomersCreditManager: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1120px]">
+          <table className="w-full min-w-280">
             <thead>
               <tr className="border-b border-border">
                 <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Customer</th>
@@ -157,12 +268,13 @@ export const CustomersCreditManager: React.FC = () => {
                 <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Last Credit Time</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Credit Till</th>
                 <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Last Cleared</th>
+                <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {customerCreditQuery.isLoading && (
                 <tr>
-                  <td colSpan={8} className="px-3 py-6 text-sm text-muted-foreground">
+                  <td colSpan={9} className="px-3 py-6 text-sm text-muted-foreground">
                     Loading customers...
                   </td>
                 </tr>
@@ -170,7 +282,7 @@ export const CustomersCreditManager: React.FC = () => {
 
               {!customerCreditQuery.isLoading && filteredCustomers.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-3 py-6 text-sm text-muted-foreground">
+                  <td colSpan={9} className="px-3 py-6 text-sm text-muted-foreground">
                     No customers match your filters.
                   </td>
                 </tr>
@@ -195,12 +307,147 @@ export const CustomersCreditManager: React.FC = () => {
                   <td className="px-3 py-3 text-sm text-muted-foreground">{formatDateTime(customer.lastCreditAt)}</td>
                   <td className="px-3 py-3 text-sm text-muted-foreground">{formatDate(customer.creditUntil)}</td>
                   <td className="px-3 py-3 text-sm text-muted-foreground">{formatDateTime(customer.lastCreditClearedAt)}</td>
+                  <td className="px-3 py-3 text-sm text-muted-foreground">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        openEditModal(customer.id, {
+                          status: customer.status,
+                          outstandingCredit: customer.outstandingCredit,
+                          totalCreditIssued: customer.totalCreditIssued,
+                          totalCreditInvoices: customer.totalCreditInvoices,
+                          creditUntil: customer.creditUntil,
+                          lastCreditAt: customer.lastCreditAt,
+                          lastCreditClearedAt: customer.lastCreditClearedAt,
+                        });
+                      }}
+                      className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Update Ledger
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {editingLedgerId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeEditModal} />
+          <div className="relative w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
+            <h2 className="text-lg font-semibold">Update Credit Ledger</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Update credit ledger details for {editingCustomer?.name ?? "this customer"}.
+            </p>
+
+            <form onSubmit={handleSubmit(onSubmitLedgerUpdate)} className="mt-5 space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium">Outstanding Credit</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  {...register("outstandingCredit", { valueAsNumber: true })}
+                  disabled={isSubmitting || updateLedgerMutation.isPending}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
+                />
+                {errors.outstandingCredit && <p className="mt-1 text-xs text-destructive">{errors.outstandingCredit.message}</p>}
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">Total Credit Issued</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  {...register("totalCreditIssued", { valueAsNumber: true })}
+                  disabled={isSubmitting || updateLedgerMutation.isPending}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
+                />
+                {errors.totalCreditIssued && <p className="mt-1 text-xs text-destructive">{errors.totalCreditIssued.message}</p>}
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">Total Credit Invoices</label>
+                <input
+                  type="number"
+                  step="1"
+                  min={0}
+                  {...register("totalCreditInvoices", { valueAsNumber: true })}
+                  disabled={isSubmitting || updateLedgerMutation.isPending}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
+                />
+                {errors.totalCreditInvoices && <p className="mt-1 text-xs text-destructive">{errors.totalCreditInvoices.message}</p>}
+              </div>
+
+              <div>
+                <CustomSelect
+                  label="Status"
+                  value={selectedEditStatus}
+                  onChange={(value) => setValue("status", value as CreditStatus, { shouldValidate: true, shouldDirty: true })}
+                  options={[
+                    { value: "clear", label: "Clear" },
+                    { value: "due", label: "Due" },
+                    { value: "overdue", label: "Overdue" },
+                  ]}
+                  disabled={isSubmitting || updateLedgerMutation.isPending}
+                />
+                {errors.status && <p className="mt-1 text-xs text-destructive">{errors.status.message}</p>}
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">Credit Till</label>
+                <input
+                  type="date"
+                  {...register("creditUntil")}
+                  disabled={isSubmitting || updateLedgerMutation.isPending}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">Last Credit Time</label>
+                <input
+                  type="datetime-local"
+                  {...register("lastCreditAt")}
+                  disabled={isSubmitting || updateLedgerMutation.isPending}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">Last Cleared Time</label>
+                <input
+                  type="datetime-local"
+                  {...register("lastCreditClearedAt")}
+                  disabled={isSubmitting || updateLedgerMutation.isPending}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  disabled={isSubmitting || updateLedgerMutation.isPending}
+                  className="rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || updateLedgerMutation.isPending}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                >
+                  {updateLedgerMutation.isPending ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

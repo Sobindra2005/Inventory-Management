@@ -10,6 +10,7 @@ import {
   seedSettingsSchema,
   type SeedSettingsFormData,
 } from "@/lib/forms/seed-settings";
+import { requestPopupConfirm } from "@/lib/ui/popup-message";
 
 export function SeedDataSettings() {
   const seedStatusQuery = useSeedStatus();
@@ -40,10 +41,30 @@ export function SeedDataSettings() {
   }, [clearMutation.data, clearMutation.isSuccess, seedMutation.data, seedMutation.isSuccess]);
 
   const onSeedSubmit = async (values: SeedSettingsFormData) => {
+    const confirmed = await requestPopupConfirm({
+      title: "Seed Sample Data",
+      message: `Seed sample data with ${values.numProducts} products, ${values.numCustomers} customers, and ${values.numInvoices} invoices?`,
+      confirmLabel: "Seed",
+      cancelLabel: "Cancel",
+    });
+    if (!confirmed) {
+      return;
+    }
+
     await seedMutation.mutateAsync(values);
   };
 
   const handleSeedCustomersOnly = async () => {
+    const confirmed = await requestPopupConfirm({
+      title: "Seed Customers",
+      message: "Seed customer sample data only?",
+      confirmLabel: "Seed",
+      cancelLabel: "Cancel",
+    });
+    if (!confirmed) {
+      return;
+    }
+
     await seedMutation.mutateAsync({
       numProducts: 0,
       numCustomers: 50,
@@ -58,7 +79,12 @@ export function SeedDataSettings() {
       return;
     }
 
-    const confirmed = window.confirm("Clear all sample data? This removes products, customers, and invoices.");
+    const confirmed = await requestPopupConfirm({
+      title: "Reset Sample Data",
+      message: "Clear all sample data? This removes products, customers, and invoices.",
+      confirmLabel: "Reset",
+      cancelLabel: "Cancel",
+    });
     if (!confirmed) {
       return;
     }

@@ -2,6 +2,7 @@ export type CreditStatus = "clear" | "due" | "overdue";
 
 export interface CustomerCreditProfile {
   id: string;
+  customerId?: string;
   name: string;
   email?: string;
   phone?: string;
@@ -26,4 +27,14 @@ export interface CustomerCreditSummary {
 export interface CustomerCreditListResponse {
   customers: CustomerCreditProfile[];
   summary: CustomerCreditSummary;
+}
+
+export interface UpdateCreditLedgerRequest {
+  status: CreditStatus;
+  outstandingCredit: number;
+  totalCreditIssued: number;
+  totalCreditInvoices: number;
+  creditUntil?: string | null;
+  lastCreditAt?: string | null;
+  lastCreditClearedAt?: string | null;
 }

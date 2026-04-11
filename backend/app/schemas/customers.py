@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -18,6 +20,22 @@ class CreateCustomerRequest(BaseModel):
     phone: str | None = None
 
 
+class UpdateCustomerRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=1)
+    email: str | None = None
+    phone: str | None = None
+
+
+class UpdateCreditLedgerRequest(BaseModel):
+    status: Literal["clear", "due", "overdue"] | None = None
+    outstandingCredit: float | None = Field(default=None, ge=0)
+    totalCreditIssued: float | None = Field(default=None, ge=0)
+    totalCreditInvoices: int | None = Field(default=None, ge=0)
+    creditUntil: str | None = None
+    lastCreditAt: str | None = None
+    lastCreditClearedAt: str | None = None
+
+
 class CustomerListResponse(BaseModel):
     customers: list[Customer]
 
@@ -31,6 +49,7 @@ class CustomerCreditSummary(BaseModel):
 
 class CustomerCreditDetail(BaseModel):
     id: str
+    customerId: str | None = None
     name: str
     email: str | None = None
     phone: str | None = None
@@ -40,7 +59,7 @@ class CustomerCreditDetail(BaseModel):
     lastCreditAt: str | None = None
     lastCreditClearedAt: str | None = None
     creditUntil: str | None = None
-    status: str  # "clear", "due", or "overdue"
+    status: Literal["clear", "due", "overdue"]
     createdAt: str
     updatedAt: str
 

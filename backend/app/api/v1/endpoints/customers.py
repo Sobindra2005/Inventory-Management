@@ -12,9 +12,12 @@ from app.schemas.customers import (
     CustomerCreditListResponse,
     CustomerCreditSummary,
     CustomerListResponse,
+    UpdateCreditLedgerRequest,
+    UpdateCustomerRequest,
 )
 
 router = APIRouter(prefix="/customers")
+VALID_CREDIT_STATUSES = {"clear", "due", "overdue"}
 
 
 def _utc_now() -> datetime:
@@ -83,10 +86,13 @@ def _to_customer(document: dict) -> Customer:
 def _to_customer_credit_detail(document: dict) -> CustomerCreditDetail:
     outstanding_credit = document.get("outstandingCredit", 0)
     credit_until = _normalize_datetime(document.get("creditUntil"))
-    resolved_status = _resolve_credit_status(outstanding_credit, credit_until)
+    computed_status = _resolve_credit_status(outstanding_credit, credit_until)
+    manual_status = document.get("manualStatus") or document.get("status")
+    resolved_status = manual_status if manual_status in VALID_CREDIT_STATUSES else computed_status
 
     return CustomerCreditDetail(
         id=str(document["_id"]),
+        customerId=document.get("customerId"),
         name=document.get("customerName") or "Unknown Customer",
         email=document.get("email"),
         phone=document.get("phone"),
@@ -194,3 +200,120 @@ async def get_customer(customer_id: str, request: Request):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
 
     return _to_customer(document)
+
+
+@router.put("/{customer_id}", response_model=Customer)
+async def update_customer(customer_id: str, request: Request, payload: UpdateCustomerRequest):
+    user_id = _get_user_id(request)
+    database = get_mongo_db()
+    if database is None:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database unavailable")
+
+    customers_col = database["customers"]
+    sales_col = database["sales_invoices"]
+
+    try:
+        object_id = ObjectId(customer_id)
+    except InvalidId:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
+
+    existing = await customers_col.find_one({"_id": object_id, "userId": user_id})
+    if existing is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Customer not found")
+
+    update_fields = payload.model_dump(exclude_unset=True)
+    if not update_fields:
+        return _to_customer(existing)
+
+    now = _utc_now()
+
+    if update_fields:
+        update_fields["updatedAt"] = now
+
+        await customers_col.update_one(
+            {"_id": object_id, "userId": user_id},
+            {"$set": update_fields},
+        )
+
+    # Keep denormalized customer name in ledgers and invoices aligned.
+    if "name" in update_fields:
+        await credit_ledger_col.update_many(
+            {"userId": user_id, "customerId": customer_id},
+            {"$set": {"customerName": update_fields["name"], "updatedAt": now}},
+        )
+        await sales_col.update_many(
+            {"userId": user_id, "customerId": customer_id},
+            {"$set": {"customerName": update_fields["name"], "updatedAt": now}},
+        )
+
+    updated = await customers_col.find_one({"_id": object_id, "userId": user_id})
+    if updated is None:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update customer")
+
+    return _to_customer(updated)
+
+
+@router.put("/credit/{ledger_id}", response_model=CustomerCreditDetail)
+async def update_credit_ledger(ledger_id: str, request: Request, payload: UpdateCreditLedgerRequest):
+    user_id = _get_user_id(request)
+    database = get_mongo_db()
+    if database is None:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Database unavailable")
+
+    credit_ledger_col = database["credit_ledger"]
+
+    try:
+        ledger_object_id = ObjectId(ledger_id)
+    except InvalidId:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Credit ledger record not found")
+
+    existing = await credit_ledger_col.find_one({"_id": ledger_object_id, "userId": user_id})
+    if existing is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Credit ledger record not found")
+
+    payload_data = payload.model_dump(exclude_unset=True)
+    if not payload_data:
+        return _to_customer_credit_detail(existing)
+
+    update_fields = {}
+
+    for numeric_field in ("outstandingCredit", "totalCreditIssued", "totalCreditInvoices"):
+        if numeric_field in payload_data:
+            update_fields[numeric_field] = payload_data[numeric_field]
+
+    if "status" in payload_data:
+        update_fields["status"] = payload_data["status"]
+        update_fields["manualStatus"] = payload_data["status"]
+
+    for date_field in ("creditUntil", "lastCreditAt", "lastCreditClearedAt"):
+        if date_field not in payload_data:
+            continue
+
+        raw_value = payload_data[date_field]
+        if raw_value in (None, ""):
+            update_fields[date_field] = None
+            continue
+
+        parsed_value = _normalize_datetime(raw_value)
+        if parsed_value is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Invalid {date_field} format",
+            )
+        update_fields[date_field] = parsed_value
+
+    if not update_fields:
+        return _to_customer_credit_detail(existing)
+
+    update_fields["updatedAt"] = _utc_now()
+
+    await credit_ledger_col.update_one(
+        {"_id": ledger_object_id, "userId": user_id},
+        {"$set": update_fields},
+    )
+
+    updated = await credit_ledger_col.find_one({"_id": ledger_object_id, "userId": user_id})
+    if updated is None:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update credit ledger")
+
+    return _to_customer_credit_detail(updated)

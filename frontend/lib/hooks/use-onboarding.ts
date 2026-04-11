@@ -12,6 +12,7 @@ import {
   markOnboardingCompleted,
 } from "@/lib/utils/onboarding";
 import type { SeedDataResponse, ClearDataResponse } from "@/lib/api/seed";
+import { requestPopupConfirm } from "@/lib/ui/popup-message";
 
 export type OnboardingStep = "idle" | "initial-dialog" | "seeding" | "post-seeding-dialog";
 
@@ -91,6 +92,16 @@ export function useOnboarding(options: UseOnboardingOptions = {}): UseOnboarding
   };
 
   const handleSeedConfirm = async () => {
+    const confirmed = await requestPopupConfirm({
+      title: "Load Sample Data",
+      message: "Load sample data now?",
+      confirmLabel: "Load",
+      cancelLabel: "Cancel",
+    });
+    if (!confirmed) {
+      return;
+    }
+
     try {
       setStep("seeding");
       const result = await seedMutation.mutateAsync(seedOptions);
