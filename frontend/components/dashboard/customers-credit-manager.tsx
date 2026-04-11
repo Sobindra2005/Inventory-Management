@@ -343,7 +343,8 @@ export const CustomersCreditManager: React.FC = () => {
             </p>
 
             <form onSubmit={handleSubmit(onSubmitLedgerUpdate)} className="mt-5 space-y-4">
-              <div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
                 <label className="mb-2 block text-sm font-medium">Outstanding Credit</label>
                 <input
                   type="number"
@@ -354,9 +355,9 @@ export const CustomersCreditManager: React.FC = () => {
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
                 />
                 {errors.outstandingCredit && <p className="mt-1 text-xs text-destructive">{errors.outstandingCredit.message}</p>}
-              </div>
+                </div>
 
-              <div>
+                <div>
                 <label className="mb-2 block text-sm font-medium">Total Credit Issued</label>
                 <input
                   type="number"
@@ -367,9 +368,9 @@ export const CustomersCreditManager: React.FC = () => {
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
                 />
                 {errors.totalCreditIssued && <p className="mt-1 text-xs text-destructive">{errors.totalCreditIssued.message}</p>}
-              </div>
+                </div>
 
-              <div>
+                <div>
                 <label className="mb-2 block text-sm font-medium">Total Credit Invoices</label>
                 <input
                   type="number"
@@ -380,9 +381,9 @@ export const CustomersCreditManager: React.FC = () => {
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
                 />
                 {errors.totalCreditInvoices && <p className="mt-1 text-xs text-destructive">{errors.totalCreditInvoices.message}</p>}
-              </div>
+                </div>
 
-              <div>
+                <div>
                 <CustomSelect
                   label="Status"
                   value={selectedEditStatus}
@@ -395,9 +396,9 @@ export const CustomersCreditManager: React.FC = () => {
                   disabled={isSubmitting || updateLedgerMutation.isPending}
                 />
                 {errors.status && <p className="mt-1 text-xs text-destructive">{errors.status.message}</p>}
-              </div>
+                </div>
 
-              <div>
+                <div>
                 <label className="mb-2 block text-sm font-medium">Credit Till</label>
                 <input
                   type="date"
@@ -405,9 +406,9 @@ export const CustomersCreditManager: React.FC = () => {
                   disabled={isSubmitting || updateLedgerMutation.isPending}
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
                 />
-              </div>
+                </div>
 
-              <div>
+                <div>
                 <label className="mb-2 block text-sm font-medium">Last Credit Time</label>
                 <input
                   type="datetime-local"
@@ -415,9 +416,9 @@ export const CustomersCreditManager: React.FC = () => {
                   disabled={isSubmitting || updateLedgerMutation.isPending}
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
                 />
-              </div>
+                </div>
 
-              <div>
+                <div>
                 <label className="mb-2 block text-sm font-medium">Last Cleared Time</label>
                 <input
                   type="datetime-local"
@@ -425,6 +426,7 @@ export const CustomersCreditManager: React.FC = () => {
                   disabled={isSubmitting || updateLedgerMutation.isPending}
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50 disabled:opacity-50"
                 />
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
