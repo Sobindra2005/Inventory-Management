@@ -240,3 +240,37 @@ body {
   -webkit-text-fill-color: transparent;
   animation: shimmer 3s linear infinite;
 }
+
+@media print {
+  body.printing-invoice * {
+    visibility: hidden !important;
+  }
+
+  body.printing-invoice .invoice-print-area,
+  body.printing-invoice .invoice-print-area * {
+    visibility: visible !important;
+  }
+
+  body.printing-invoice .invoice-print-area {
+    position: fixed !important;
+    inset: 0 !important;
+    transform: none !important;
+    max-width: none !important;
+    max-height: none !important;
+    width: 100% !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding: 10mm !important;
+  }
+
+  body.printing-invoice .invoice-receipt {
+    width: min(360px, 100%) !important;
+    box-shadow: none !important;
+  }
+}

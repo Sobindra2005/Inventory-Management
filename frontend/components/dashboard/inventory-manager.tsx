@@ -18,6 +18,7 @@ import {
     useUpdateInventoryProduct,
     useUpdateInventoryStock,
 } from "@/lib/queries/use-inventory-query";
+import { requestPopupConfirm } from "@/lib/ui/popup-message";
 
 const formatPrice = (value: number) => `Rs.${value.toFixed(2)}`;
 
@@ -186,6 +187,17 @@ export const InventoryManager: React.FC = () => {
                 console.warn("Update product failed, reverted local change", error);
             }
         } else {
+            const shouldAdd = await requestPopupConfirm({
+                title: "Add Product",
+                message: `Add ${data.name} to inventory?`,
+                confirmLabel: "Add",
+                cancelLabel: "Cancel",
+            });
+
+            if (!shouldAdd) {
+                return;
+            }
+
             const optimisticProduct: InventoryProduct = {
                 id: `local-${Date.now()}`,
                 name: data.name,
@@ -226,6 +238,18 @@ export const InventoryManager: React.FC = () => {
     };
 
     const handleDelete = async (productId: string) => {
+        const product = products.find((item) => item.id === productId);
+        const shouldDelete = await requestPopupConfirm({
+            title: "Delete Product",
+            message: `Delete ${product?.name ?? "this product"} from inventory?`,
+            confirmLabel: "Delete",
+            cancelLabel: "Cancel",
+        });
+
+        if (!shouldDelete) {
+            return;
+        }
+
         const previous = [...products];
         setProducts((current) => current.filter((item) => item.id !== productId));
 

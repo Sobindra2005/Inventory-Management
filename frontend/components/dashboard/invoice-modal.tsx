@@ -31,6 +31,18 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   const handlePrint = () => {
+    if (!receiptRef.current) {
+      return;
+    }
+
+    document.body.classList.add("printing-invoice");
+
+    const cleanup = () => {
+      document.body.classList.remove("printing-invoice");
+      window.removeEventListener("afterprint", cleanup);
+    };
+
+    window.addEventListener("afterprint", cleanup);
     window.print();
   };
 
@@ -42,7 +54,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
     try {
       setIsDownloadingPdf(true);
 
-      const canvas = await html2canvas(receiptRef.current, {
+      const source = receiptRef.current;
+      const canvas = await html2canvas(source, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
@@ -111,7 +124,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.2 }}
-          className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md max-h-[90vh] bg-card rounded-2xl shadow-xl overflow-hidden flex flex-col print:static print:inset-auto print:translate-x-0 print:translate-y-0 print:max-w-none print:max-h-none print:rounded-none print:shadow-none"
+          className="invoice-print-area fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md max-h-[90vh] bg-card rounded-2xl shadow-xl overflow-hidden flex flex-col print:static print:inset-auto print:translate-x-0 print:translate-y-0 print:max-w-none print:max-h-none print:rounded-none print:shadow-none"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border bg-muted/30 px-6 py-4 print:hidden">
@@ -151,38 +164,39 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
             {!isLoading && !errorMessage && invoice && (
               <div
                 ref={receiptRef}
-                className="bg-white text-black rounded-xl p-5 font-mono text-sm space-y-4 border border-black/20 print:rounded-none print:border-black"
+                className="invoice-receipt bg-white text-black rounded-xl p-5 font-mono text-sm space-y-4 border print:rounded-none print:border-black"
+                style={{ borderColor: "rgba(0, 0, 0, 0.2)" }}
               >
                 {/* Shop Header */}
-                <div className="text-center border-b border-dashed border-black/40 pb-3">
-                  <p className="text-[10px] tracking-[0.2em] uppercase text-black/60">Sales Receipt</p>
+                <div className="text-center border-b border-dashed pb-3" style={{ borderBottomColor: "rgba(0, 0, 0, 0.4)" }}>
+                  <p className="text-[10px] tracking-[0.2em] uppercase" style={{ color: "rgba(0, 0, 0, 0.6)" }}>Sales Receipt</p>
                   <h3 className="font-bold text-base mt-1 mb-1">{invoice.shopName}</h3>
                   {invoice.shopContact && (
-                    <p className="text-xs text-black/70">{invoice.shopContact}</p>
+                    <p className="text-xs" style={{ color: "rgba(0, 0, 0, 0.7)" }}>{invoice.shopContact}</p>
                   )}
                 </div>
 
                 {/* Invoice Details */}
-                <div className="text-xs space-y-1 border-b border-dashed border-black/40 pb-3">
+                <div className="text-xs space-y-1 border-b border-dashed pb-3" style={{ borderBottomColor: "rgba(0, 0, 0, 0.4)" }}>
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-black/60 uppercase tracking-wide">Invoice</span>
+                    <span className="uppercase tracking-wide" style={{ color: "rgba(0, 0, 0, 0.6)" }}>Invoice</span>
                     <span className="font-semibold">{invoice.invoiceId}</span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-black/60 uppercase tracking-wide">Date</span>
+                    <span className="uppercase tracking-wide" style={{ color: "rgba(0, 0, 0, 0.6)" }}>Date</span>
                     <span>{formatDate(invoice.dateTime)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-black/60 uppercase tracking-wide">Items</span>
+                    <span className="uppercase tracking-wide" style={{ color: "rgba(0, 0, 0, 0.6)" }}>Items</span>
                     <span>{invoice.itemCount}</span>
                   </div>
                 </div>
 
                 {/* Items List */}
-                <div className="space-y-2 border-b border-dashed border-black/40 pb-3">
+                <div className="space-y-2 border-b border-dashed pb-3" style={{ borderBottomColor: "rgba(0, 0, 0, 0.4)" }}>
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="border-b border-black/30">
+                      <tr className="border-b" style={{ borderBottomColor: "rgba(0, 0, 0, 0.3)" }}>
                         <th className="text-left font-semibold py-1">Product</th>
                         <th className="text-right font-semibold py-1">Qty</th>
                         <th className="text-right font-semibold py-1">Price</th>
@@ -191,7 +205,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                     </thead>
                     <tbody>
                       {invoice.items.map((item) => (
-                        <tr key={`${item.productId}-${item.name}`} className="border-b border-black/10">
+                        <tr key={`${item.productId}-${item.name}`} className="border-b" style={{ borderBottomColor: "rgba(0, 0, 0, 0.1)" }}>
                           <td className="py-1 truncate">{item.name}</td>
                           <td className="text-right">{item.quantity}</td>
                           <td className="text-right">${item.price.toFixed(2)}</td>
@@ -205,7 +219,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 </div>
 
                 {/* Summary */}
-                <div className="space-y-1 text-xs border-b border-dashed border-black/40 pb-3">
+                <div className="space-y-1 text-xs border-b border-dashed pb-3" style={{ borderBottomColor: "rgba(0, 0, 0, 0.4)" }}>
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
                     <span>${invoice.subtotal.toFixed(2)}</span>
@@ -223,7 +237,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 </div>
 
                 {/* Payment Info */}
-                <div className="text-xs space-y-1 border-b border-dashed border-black/40 pb-3">
+                <div className="text-xs space-y-1 border-b border-dashed pb-3" style={{ borderBottomColor: "rgba(0, 0, 0, 0.4)" }}>
                   <p className="capitalize font-semibold">
                     Payment: {invoice.paymentMethod === "cash" ? "💵 Cash" : "💳 Credit"}
                   </p>
@@ -241,7 +255,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
                 </div>
 
                 {/* Footer Message */}
-                <div className="text-center text-xs text-black/70 italic pt-2">
+                <div className="text-center text-xs italic pt-2" style={{ color: "rgba(0, 0, 0, 0.7)" }}>
                   Thank you for your purchase!
                 </div>
               </div>
