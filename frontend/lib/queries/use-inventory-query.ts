@@ -21,11 +21,13 @@ const applyInventoryFilters = (
   source: InventoryListResponse,
   params?: InventoryQueryParams
 ): InventoryListResponse => {
+  const page = Math.max(1, params?.page ?? 1);
+  const limit = Math.max(1, params?.limit ?? 10);
   const search = params?.search?.trim().toLowerCase();
   const category = params?.category?.trim().toLowerCase();
   const lowStockOnly = params?.lowStockOnly ?? false;
 
-  const filteredProducts = source.products.filter((product) => {
+  const filteredProducts = source.data.filter((product) => {
     const matchesSearch =
       !search ||
       product.name.toLowerCase().includes(search) ||
@@ -41,12 +43,19 @@ const applyInventoryFilters = (
   });
 
   const categories = Array.from(
-    new Set(source.products.map((product) => product.category))
+    new Set(source.data.map((product) => product.category))
   );
+  const totalItems = filteredProducts.length;
+  const totalPages = totalItems > 0 ? Math.ceil(totalItems / limit) : 0;
+  const offset = (page - 1) * limit;
+  const paginatedProducts = filteredProducts.slice(offset, offset + limit);
 
   return {
-    products: filteredProducts,
-    totalCount: filteredProducts.length,
+    data: paginatedProducts,
+    page,
+    limit,
+    totalItems,
+    totalPages,
     categories,
   };
 };

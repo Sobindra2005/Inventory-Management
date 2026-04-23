@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
+import math
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 from pymongo.errors import DuplicateKeyError
 
 from app.api.deps import get_mongo_db
@@ -73,6 +74,8 @@ async def _ensure_indexes(collection) -> None:
 @router.get("", response_model=InventoryListResponse)
 async def list_inventory(
     request: Request,
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=10, ge=1),
     search: str | None = None,
     category: str | None = None,
     lowStockOnly: bool | None = None,
@@ -96,12 +99,28 @@ async def list_inventory(
     if lowStockOnly:
         query["$expr"] = {"$lte": ["$stock", "$lowStockThreshold"]}
 
-    documents = await collection.find(query).sort("updatedAt", -1).to_list(length=None)
-    products = [_to_inventory_product(document) for document in documents]
     total_count = await collection.count_documents(query)
+    offset = (page - 1) * limit
+
+    documents = (
+        await collection.find(query)
+        .sort("updatedAt", -1)
+        .skip(offset)
+        .limit(limit)
+        .to_list(length=limit)
+    )
+    products = [_to_inventory_product(document) for document in documents]
+    total_pages = math.ceil(total_count / limit) if total_count else 0
     categories = sorted(await collection.distinct("category", {"userId": user_id}))
 
-    return InventoryListResponse(products=products, totalCount=total_count, categories=categories)
+    return InventoryListResponse(
+        data=products,
+        page=page,
+        limit=limit,
+        totalItems=total_count,
+        totalPages=total_pages,
+        categories=categories,
+    )
 
 
 @router.post("", response_model=InventoryProduct, status_code=status.HTTP_201_CREATED)

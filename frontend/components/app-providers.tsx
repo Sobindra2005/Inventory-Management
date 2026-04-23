@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PopupMessageCenter } from "@/components/ui/popup-message-center";
 import { setHttpClientAuthTokenGetter } from "@/lib/api/http-client";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 type AppProvidersProps = {
   children: React.ReactNode;
@@ -44,6 +45,7 @@ export function AppProviders({ children }: AppProvidersProps) {
         {children}
         <PopupMessageCenter />
       </ThemeProvider>
+       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }

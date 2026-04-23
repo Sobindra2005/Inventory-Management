@@ -3,7 +3,7 @@ import type { InventoryListResponse } from "@/lib/contracts/inventory";
 const now = "2026-03-18T10:30:00.000Z";
 
 export const inventorySampleData: InventoryListResponse = {
-  products: [
+  data: [
     {
       id: "inv-demo-1",
       name: "Wireless Barcode Scanner",
@@ -60,6 +60,9 @@ export const inventorySampleData: InventoryListResponse = {
       updatedAt: now,
     },
   ],
-  totalCount: 5,
+  page: 1,
+  limit: 10,
+  totalItems: 5,
+  totalPages: 1,
   categories: ["Hardware", "Consumables", "Office Supplies"],
 };

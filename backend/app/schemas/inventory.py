@@ -14,8 +14,11 @@ class InventoryProduct(BaseModel):
 
 
 class InventoryListResponse(BaseModel):
-    products: list[InventoryProduct]
-    totalCount: int
+    data: list[InventoryProduct]
+    page: int
+    limit: int
+    totalItems: int
+    totalPages: int
     categories: list[str]
 
 

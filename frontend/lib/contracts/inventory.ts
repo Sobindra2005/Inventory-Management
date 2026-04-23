@@ -11,8 +11,11 @@ export interface InventoryProduct {
 }
 
 export interface InventoryListResponse {
-  products: InventoryProduct[];
-  totalCount: number;
+  data: InventoryProduct[];
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
   categories: string[];
 }
 
@@ -39,6 +42,8 @@ export interface UpdateInventoryStockRequest {
 }
 
 export interface InventoryQueryParams {
+  page?: number;
+  limit?: number;
   search?: string;
   category?: string;
   lowStockOnly?: boolean;

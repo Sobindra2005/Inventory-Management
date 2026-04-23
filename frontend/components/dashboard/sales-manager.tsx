@@ -27,7 +27,7 @@ import { showPopupMessage } from "@/lib/ui/popup-message";
 const formatPrice = (value: number) => `Rs.${value.toFixed(2)}`;
 
 export const SalesManager: React.FC = () => {
-    const inventoryQuery = useInventoryList();
+    const inventoryQuery = useInventoryList({ limit: 10 });
     const salesHistoryQuery = useSalesHistory();
     const customersQuery = useCustomers();
     const createSaleMutation = useCreateSale();
@@ -56,7 +56,7 @@ export const SalesManager: React.FC = () => {
     const [generatedInvoice, setGeneratedInvoice] = useState<Invoice | null>(null);
     const [isCreatingCustomer, setIsCreatingCustomer] = useState(false);
 
-    const products = inventoryQuery.data?.products || [];
+    const products = inventoryQuery.data?.data || [];
 
     // Filter products based on search
     const filteredProducts = useMemo(() => {

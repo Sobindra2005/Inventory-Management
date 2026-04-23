@@ -24,8 +24,47 @@ import { CustomSelect } from "@/components/ui/custom-select";
 
 const formatPrice = (value: number) => `Rs.${value.toFixed(2)}`;
 
+type PaginationItem = number | "ellipsis";
+
+const buildPaginationItems = (currentPage: number, totalPages: number): PaginationItem[] => {
+    if (totalPages <= 7) {
+        return Array.from({ length: totalPages }, (_, index) => index + 1);
+    }
+
+    const items: PaginationItem[] = [1];
+    const left = Math.max(2, currentPage - 1);
+    const right = Math.min(totalPages - 1, currentPage + 1);
+
+    if (left > 2) {
+        items.push("ellipsis");
+    }
+
+    for (let pageNumber = left; pageNumber <= right; pageNumber += 1) {
+        items.push(pageNumber);
+    }
+
+    if (right < totalPages - 1) {
+        items.push("ellipsis");
+    }
+
+    items.push(totalPages);
+    return items;
+};
+
 export const InventoryManager: React.FC = () => {
-    const inventoryQuery = useInventoryList();
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(10);
+    const [search, setSearch] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState("all");
+    const [lowStockOnly, setLowStockOnly] = useState(false);
+
+    const inventoryQuery = useInventoryList({
+        page,
+        limit,
+        search: search.trim() || undefined,
+        category: selectedCategory === "all" ? undefined : selectedCategory,
+        lowStockOnly: lowStockOnly || undefined,
+    });
     const addMutation = useAddInventoryProduct();
     const updateMutation = useUpdateInventoryProduct();
     const updateStockMutation = useUpdateInventoryStock();
@@ -34,9 +73,6 @@ export const InventoryManager: React.FC = () => {
     const [products, setProducts] = useState<InventoryProduct[]>([]);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingProductId, setEditingProductId] = useState<string | null>(null);
-    const [search, setSearch] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("all");
-    const [lowStockOnly, setLowStockOnly] = useState(false);
     const [editingStockId, setEditingStockId] = useState<string | null>(null);
     const [inlineStockValue, setInlineStockValue] = useState("");
 
@@ -51,35 +87,44 @@ export const InventoryManager: React.FC = () => {
     });
 
     useEffect(() => {
-        if (inventoryQuery.data?.products) {
-            setProducts(inventoryQuery.data.products);
+        if (inventoryQuery.data?.data) {
+            setProducts(inventoryQuery.data.data);
         }
-    }, [inventoryQuery.data]);
+    }, [inventoryQuery.data?.data]);
+
+    useEffect(() => {
+        const totalPages = inventoryQuery.data?.totalPages ?? 0;
+
+        if (totalPages === 0) {
+            if (page !== 1) {
+                setPage(1);
+            }
+            return;
+        }
+
+        if (page > totalPages) {
+            setPage(totalPages);
+        }
+    }, [inventoryQuery.data?.totalPages, page]);
 
     const categoryOptions = useMemo(() => {
-        const unique = new Set(products.map((item) => item.category));
+        const categories = inventoryQuery.data?.categories ?? [];
         return [
             { value: "all", label: "All Categories" },
-            ...Array.from(unique).map((category) => ({ value: category, label: category })),
+            ...categories.map((category) => ({ value: category, label: category })),
         ];
-    }, [products]);
+    }, [inventoryQuery.data?.categories]);
 
-    const filteredProducts = useMemo(() => {
-        const searchTerm = search.trim().toLowerCase();
-
-        return products.filter((product) => {
-            const matchesSearch =
-                !searchTerm ||
-                product.name.toLowerCase().includes(searchTerm) ||
-                product.barcode.toLowerCase().includes(searchTerm);
-            const matchesCategory =
-                selectedCategory === "all" || product.category === selectedCategory;
-            const isLowStock = product.stock <= product.lowStockThreshold;
-            const matchesLowStock = !lowStockOnly || isLowStock;
-
-            return matchesSearch && matchesCategory && matchesLowStock;
-        });
-    }, [products, search, selectedCategory, lowStockOnly]);
+    const totalItems = inventoryQuery.data?.totalItems ?? 0;
+    const totalPages = inventoryQuery.data?.totalPages ?? 0;
+    const currentPage = inventoryQuery.data?.page ?? page;
+    const currentLimit = inventoryQuery.data?.limit ?? limit;
+    const startItem = totalItems === 0 ? 0 : (currentPage - 1) * currentLimit + 1;
+    const endItem = totalItems === 0 ? 0 : Math.min(currentPage * currentLimit, totalItems);
+    const paginationItems = useMemo(
+        () => buildPaginationItems(currentPage, totalPages),
+        [currentPage, totalPages]
+    );
 
     const onAddOrEditSubmit = async (data: AddInventoryProductFormData) => {
         if (editingProductId) {
@@ -339,9 +384,9 @@ export const InventoryManager: React.FC = () => {
                 title="Inventory Products"
                 subtitle="Easy to view, edit, and control stock."
                 columns={inventoryColumns}
-                rows={filteredProducts}
+                rows={products}
                 rowKey={(product) => product.id}
-                isLoading={inventoryQuery.isLoading}
+                isLoading={inventoryQuery.isLoading || inventoryQuery.isFetching}
                 loadingMessage="Loading inventory..."
                 emptyMessage="No products match your filters."
                 minWidthClassName="min-w-[760px]"
@@ -357,7 +402,10 @@ export const InventoryManager: React.FC = () => {
                                 </div>
                                 <input
                                     value={search}
-                                    onChange={(event) => setSearch(event.target.value)}
+                                    onChange={(event) => {
+                                        setPage(1);
+                                        setSearch(event.target.value);
+                                    }}
                                     placeholder="Product name or barcode"
                                     className="w-full h-10 pl-10 pr-4 bg-muted/30 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all placeholder:text-muted-foreground/50"
                                 />
@@ -368,8 +416,27 @@ export const InventoryManager: React.FC = () => {
                             <CustomSelect
                                 label="Category"
                                 value={selectedCategory}
-                                onChange={setSelectedCategory}
+                                onChange={(value) => {
+                                    setPage(1);
+                                    setSelectedCategory(value);
+                                }}
                                 options={categoryOptions}
+                            />
+                        </div>
+
+                        <div className="w-full lg:w-40">
+                            <CustomSelect
+                                label="Rows per page"
+                                value={String(limit)}
+                                onChange={(value) => {
+                                    setPage(1);
+                                    setLimit(Number(value));
+                                }}
+                                options={[
+                                    { value: "10", label: "10" },
+                                    { value: "20", label: "20" },
+                                    { value: "50", label: "50" },
+                                ]}
                             />
                         </div>
 
@@ -378,7 +445,10 @@ export const InventoryManager: React.FC = () => {
                                 id="low-stock-only"
                                 type="checkbox"
                                 checked={lowStockOnly}
-                                onChange={(event) => setLowStockOnly(event.target.checked)}
+                                onChange={(event) => {
+                                    setPage(1);
+                                    setLowStockOnly(event.target.checked);
+                                }}
                                 className="h-4 w-4 accent-primary cursor-pointer"
                             />
                             <label htmlFor="low-stock-only" className="text-sm text-foreground cursor-pointer select-none">
@@ -524,6 +594,66 @@ export const InventoryManager: React.FC = () => {
                         )}
                     </AnimatePresence>
                 )}
+                afterTable={
+                    totalPages > 0 ? (
+                        <div className="flex flex-col gap-4 border-t border-border pt-4 md:flex-row md:items-center md:justify-between">
+                            <p className="text-sm text-muted-foreground">
+                                Showing {startItem}-{endItem} of {totalItems} products
+                            </p>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setPage((current) => Math.max(1, current - 1))}
+                                    disabled={page <= 1}
+                                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    Previous
+                                </button>
+
+                                {paginationItems.map((item, index) => {
+                                    if (item === "ellipsis") {
+                                        return (
+                                            <span
+                                                key={`ellipsis-${index}`}
+                                                className="px-2 text-sm text-muted-foreground"
+                                            >
+                                                ...
+                                            </span>
+                                        );
+                                    }
+
+                                    const isCurrent = item === page;
+
+                                    return (
+                                        <button
+                                            key={item}
+                                            type="button"
+                                            onClick={() => setPage(item)}
+                                            aria-current={isCurrent ? "page" : undefined}
+                                            className={`min-w-9 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                                                isCurrent
+                                                    ? "border-primary bg-primary text-primary-foreground"
+                                                    : "border-border bg-background hover:bg-accent"
+                                            }`}
+                                        >
+                                            {item}
+                                        </button>
+                                    );
+                                })}
+
+                                <button
+                                    type="button"
+                                    onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+                                    disabled={page >= totalPages}
+                                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    ) : null
+                }
             />
         </div>
     );

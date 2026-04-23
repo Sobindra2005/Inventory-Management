@@ -89,7 +89,7 @@ Prefer direct typed payload responses (as frontend contracts expect), not nested
 - Money: numeric decimal values (store with Decimal128 in Mongo, serialize as number)
 
 ### 4.6 Pagination Convention (for list endpoints)
-- Query: `page` (default 1), `limit` (default 20, max 100)
+- Query: `page` (default 1), `limit` (default 10)
 
 ---
 
@@ -102,6 +102,8 @@ Frontend expects contracts from `InventoryProduct`, `InventoryListResponse`, and
 Get inventory list with optional filtering.
 
 **Query params**
+- `page?: number` (default `1`)
+- `limit?: number` (default `10`)
 - `search?: string`
 - `category?: string`
 - `lowStockOnly?: boolean`
@@ -109,7 +111,7 @@ Get inventory list with optional filtering.
 **Response 200**
 ```json
 {
-  "products": [
+  "data": [
     {
       "id": "inv-001",
       "name": "Wireless Barcode Scanner",
@@ -122,7 +124,10 @@ Get inventory list with optional filtering.
       "updatedAt": "2026-03-18T10:30:00.000Z"
     }
   ],
-  "totalCount": 1,
+  "page": 1,
+  "limit": 10,
+  "totalItems": 1,
+  "totalPages": 1,
   "categories": ["Hardware", "Consumables", "Office Supplies"]
 }
 ```
