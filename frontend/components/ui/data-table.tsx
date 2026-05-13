@@ -89,11 +89,15 @@ export function DataTable<TData>({
           </thead>
           <tbody className="divide-y divide-border">
             {isLoading && (
-              <tr>
-                <td colSpan={columns.length} className="px-3 py-6 text-sm text-muted-foreground">
-                  {loadingMessage}
-                </td>
-              </tr>
+              Array.from({ length: 10 }).map((_, rowIndex) => (
+                <tr key={`skeleton-row-${rowIndex}`} className="animate-pulse">
+                  {columns.map((column) => (
+                    <td key={column.id} className={cn("px-3 py-6", column.cellClassName)}>
+                      <div className="h-4 w-full rounded-md bg-muted/70" />
+                    </td>
+                  ))}
+                </tr>
+              ))
             )}
 
             {!isLoading && rows.length === 0 && (
