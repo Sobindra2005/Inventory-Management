@@ -60,3 +60,11 @@ class GenerateReportRequest(BaseModel):
     type: str  # "sales", "inventory", "customer", "daily_summary"
     startDate: str  # YYYY-MM-DD format
     endDate: str  # YYYY-MM-DD format
+
+
+class ReportsListResponse(BaseModel):
+    data: list[GeneratedReport]
+    page: int
+    limit: int
+    totalItems: int
+    totalPages: int

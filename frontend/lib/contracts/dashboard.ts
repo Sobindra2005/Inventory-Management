@@ -48,6 +48,19 @@ export interface GeneratedReport {
   updatedAt: string;
 }
 
+export interface ReportsListResponse {
+  data: GeneratedReport[];
+  page: number;
+  limit: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+export interface ReportsQueryParams {
+  page?: number;
+  limit?: number;
+}
+
 export interface DashboardData {
   kpi: KPIMetrics;
   lowStock: LowStockResponse;

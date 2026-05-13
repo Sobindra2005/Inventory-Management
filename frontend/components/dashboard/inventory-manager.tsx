@@ -21,35 +21,9 @@ import {
 import { requestPopupConfirm } from "@/lib/ui/popup-message";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { CustomSelect } from "@/components/ui/custom-select";
+import { Pagination } from "@/components/ui/pagination";
 
 const formatPrice = (value: number) => `Rs.${value.toFixed(2)}`;
-
-type PaginationItem = number | "ellipsis";
-
-const buildPaginationItems = (currentPage: number, totalPages: number): PaginationItem[] => {
-    if (totalPages <= 7) {
-        return Array.from({ length: totalPages }, (_, index) => index + 1);
-    }
-
-    const items: PaginationItem[] = [1];
-    const left = Math.max(2, currentPage - 1);
-    const right = Math.min(totalPages - 1, currentPage + 1);
-
-    if (left > 2) {
-        items.push("ellipsis");
-    }
-
-    for (let pageNumber = left; pageNumber <= right; pageNumber += 1) {
-        items.push(pageNumber);
-    }
-
-    if (right < totalPages - 1) {
-        items.push("ellipsis");
-    }
-
-    items.push(totalPages);
-    return items;
-};
 
 export const InventoryManager: React.FC = () => {
     const [page, setPage] = useState(1);
@@ -121,10 +95,6 @@ export const InventoryManager: React.FC = () => {
     const currentLimit = inventoryQuery.data?.limit ?? limit;
     const startItem = totalItems === 0 ? 0 : (currentPage - 1) * currentLimit + 1;
     const endItem = totalItems === 0 ? 0 : Math.min(currentPage * currentLimit, totalItems);
-    const paginationItems = useMemo(
-        () => buildPaginationItems(currentPage, totalPages),
-        [currentPage, totalPages]
-    );
 
     const onAddOrEditSubmit = async (data: AddInventoryProductFormData) => {
         if (editingProductId) {
@@ -596,62 +566,15 @@ export const InventoryManager: React.FC = () => {
                 )}
                 afterTable={
                     totalPages > 0 ? (
-                        <div className="flex flex-col gap-4 border-t border-border pt-4 md:flex-row md:items-center md:justify-between">
-                            <p className="text-sm text-muted-foreground">
-                                Showing {startItem}-{endItem} of {totalItems} products
-                            </p>
-
-                            <div className="flex flex-wrap items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setPage((current) => Math.max(1, current - 1))}
-                                    disabled={page <= 1}
-                                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    Previous
-                                </button>
-
-                                {paginationItems.map((item, index) => {
-                                    if (item === "ellipsis") {
-                                        return (
-                                            <span
-                                                key={`ellipsis-${index}`}
-                                                className="px-2 text-sm text-muted-foreground"
-                                            >
-                                                ...
-                                            </span>
-                                        );
-                                    }
-
-                                    const isCurrent = item === page;
-
-                                    return (
-                                        <button
-                                            key={item}
-                                            type="button"
-                                            onClick={() => setPage(item)}
-                                            aria-current={isCurrent ? "page" : undefined}
-                                            className={`min-w-9 rounded-lg border px-3 py-2 text-sm transition-colors ${
-                                                isCurrent
-                                                    ? "border-primary bg-primary text-primary-foreground"
-                                                    : "border-border bg-background hover:bg-accent"
-                                            }`}
-                                        >
-                                            {item}
-                                        </button>
-                                    );
-                                })}
-
-                                <button
-                                    type="button"
-                                    onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
-                                    disabled={page >= totalPages}
-                                    className="rounded-lg border border-border bg-background px-3 py-2 text-sm hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        </div>
+                        <Pagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            totalItems={totalItems}
+                            itemsPerPage={limit}
+                            onPageChange={setPage}
+                            isDisabled={inventoryQuery.isLoading || inventoryQuery.isFetching}
+                            showItemInfo={true}
+                        />
                     ) : null
                 }
             />

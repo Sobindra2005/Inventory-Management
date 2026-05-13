@@ -1,11 +1,12 @@
 /**
  * Reports List Component
- * Displays generated reports with download functionality
+ * Displays generated reports with download functionality and pagination
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
 import type { GeneratedReport } from '@/lib/contracts/dashboard';
 import { DataTable, type DataTableColumn } from '@/components/ui/data-table';
+import { Pagination } from '@/components/ui/pagination';
 import {
   formatReportDate,
   formatFileSize,
@@ -17,12 +18,24 @@ interface ReportsListProps {
   reports: GeneratedReport[];
   onDownload: (reportId: string) => Promise<void>;
   isLoading?: boolean;
+  currentPage?: number;
+  totalPages?: number;
+  totalItems?: number;
+  itemsPerPage?: number;
+  onPageChange?: (page: number) => void;
+  showPagination?: boolean;
 }
 
 export const ReportsList: React.FC<ReportsListProps> = ({
   reports,
   onDownload,
   isLoading,
+  currentPage = 1,
+  totalPages = 0,
+  totalItems = 0,
+  itemsPerPage = 10,
+  onPageChange,
+  showPagination = false,
 }) => {
   const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
 
@@ -125,6 +138,19 @@ export const ReportsList: React.FC<ReportsListProps> = ({
       minWidthClassName="min-w-[900px]"
       tableClassName="table-fixed"
       rowClassName={() => 'hover:bg-accent/50 transition-colors'}
+      afterTable={
+        showPagination && totalPages > 0 && onPageChange ? (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={onPageChange}
+            isDisabled={isLoading}
+            showItemInfo={true}
+          />
+        ) : null
+      }
     />
   );
 };

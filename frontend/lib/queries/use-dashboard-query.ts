@@ -5,7 +5,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dashboardApi } from '../api/dashboard';
-import type { DashboardData, LowStockResponse, GeneratedReport } from '../contracts/dashboard';
+import type { DashboardData, LowStockResponse, GeneratedReport, ReportsListResponse, ReportsQueryParams } from '../contracts/dashboard';
 import { isDashboardDemoFallbackEnabled } from '@/lib/config/dashboard-demo';
 import {
   dashboardLowStockSampleData,
@@ -19,8 +19,8 @@ export const dashboardQueryKeys = {
   all: ['dashboard'] as const,
   kpi: () => [...dashboardQueryKeys.all, 'kpi'] as const,
   lowStock: () => [...dashboardQueryKeys.all, 'lowStock'] as const,
-  reports: () => [...dashboardQueryKeys.all, 'reports'] as const,
-  reportDetail: (id: string) => [...dashboardQueryKeys.reports(), id] as const,
+  reports: (params?: ReportsQueryParams) => [...dashboardQueryKeys.all, 'reports', params] as const,
+  reportDetail: (id: string) => [...dashboardQueryKeys.all, 'reports', id] as const,
 };
 
 const getLowStockSampleForLimit = (limit: number): LowStockResponse => {
@@ -33,6 +33,23 @@ const getLowStockSampleForLimit = (limit: number): LowStockResponse => {
     products,
     totalCount: dashboardLowStockSampleData.totalCount,
     criticalCount,
+  };
+};
+
+const getReportsSampleForParams = (params?: ReportsQueryParams): ReportsListResponse => {
+  const page = Math.max(1, params?.page ?? 1);
+  const limit = Math.max(1, params?.limit ?? 10);
+  const totalItems = dashboardReportsSampleData.length;
+  const totalPages = totalItems > 0 ? Math.ceil(totalItems / limit) : 0;
+  const offset = (page - 1) * limit;
+  const data = dashboardReportsSampleData.slice(offset, offset + limit);
+
+  return {
+    data,
+    page,
+    limit,
+    totalItems,
+    totalPages,
   };
 };
 
@@ -90,13 +107,13 @@ export const useLowStockProducts = (limit: number = 10) => {
   });
 };
 
-export const useReports = (limit: number = 10) => {
-  return useQuery<GeneratedReport[]>({
-    queryKey: dashboardQueryKeys.reports(),
+export const useReports = (params?: ReportsQueryParams) => {
+  return useQuery<ReportsListResponse>({
+    queryKey: dashboardQueryKeys.reports(params),
     queryFn: () =>
       withDashboardFallback(
-        () => dashboardApi.fetchReports(limit),
-        dashboardReportsSampleData.slice(0, limit),
+        () => dashboardApi.fetchReports(params),
+        getReportsSampleForParams(params),
         'reports list'
       ),
     staleTime: 1000 * 60 * 10,

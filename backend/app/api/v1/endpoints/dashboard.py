@@ -1,3 +1,4 @@
+import math
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from app.schemas.dashboard import (
     KPIMetrics,
     LowStockProduct,
     LowStockResponse,
+    ReportsListResponse,
 )
 from app.services.realtime import publish_realtime_event
 from app.workers.report_tasks import generate_report_task
@@ -231,8 +233,8 @@ async def generate_report(request: Request, payload: GenerateReportRequest):
     return _to_generated_report(created)
 
 
-@router.get("/reports", response_model=list[GeneratedReport])
-async def get_reports(request: Request, limit: int = 10):
+@router.get("/reports", response_model=ReportsListResponse)
+async def get_reports(request: Request, page: int = 1, limit: int = 10):
     user_id = _get_user_id(request)
     database = get_mongo_db()
     if database is None:
@@ -240,10 +242,20 @@ async def get_reports(request: Request, limit: int = 10):
 
     reports_col = database["reports"]
 
-    documents = await reports_col.find({"userId": user_id}).sort("generatedAt", -1).limit(limit).to_list(length=None)
-    reports = [_to_generated_report(doc) for doc in documents]
+    total_count = await reports_col.count_documents({"userId": user_id})
+    offset = (page - 1) * limit
 
-    return reports
+    documents = await reports_col.find({"userId": user_id}).sort("generatedAt", -1).skip(offset).limit(limit).to_list(length=limit)
+    reports = [_to_generated_report(doc) for doc in documents]
+    total_pages = math.ceil(total_count / limit) if total_count else 0
+
+    return ReportsListResponse(
+        data=reports,
+        page=page,
+        limit=limit,
+        totalItems=total_count,
+        totalPages=total_pages,
+    )
 
 
 @router.get("/reports/{report_id}/download")

@@ -4,7 +4,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { IndianRupee, Package, ReceiptText, Wallet } from "lucide-react";
 import {
   useDashboardData,
@@ -23,12 +23,17 @@ import { ReportsList } from "@/components/dashboard/reports-list";
 import { GenerateReportFormData } from "@/lib/forms/dashboard";
 
 export default function DashboardPage() {
+  const [reportsPage, setReportsPage] = useState(1);
+  const [reportsLimit] = useState(10);
+
   const dashboardQuery = useDashboardData();
   const lowStockQuery = useLowStockProducts(10);
-  const reportsQuery = useReports(10);
+  const reportsQuery = useReports({ page: reportsPage, limit: reportsLimit });
   const generateReportMutation = useGenerateReport();
   const downloadReportMutation = useDownloadReport();
 
+  console.log("here is the report list", reportsQuery.data);
+  
   // Onboarding flow
   const onboarding = useOnboarding({
     autoShow: true,
@@ -183,9 +188,15 @@ export default function DashboardPage() {
         <div className="mt-8">
           <h2 className="text-lg font-semibold mb-4">Reports</h2>
           <ReportsList
-            reports={reportsQuery.data ?? []}
+            reports={reportsQuery.data?.data ?? []}
             onDownload={handleDownloadReport}
             isLoading={reportsQuery.isLoading}
+            currentPage={reportsQuery.data?.page ?? reportsPage}
+            totalPages={reportsQuery.data?.totalPages ?? 0}
+            totalItems={reportsQuery.data?.totalItems ?? 0}
+            itemsPerPage={reportsLimit}
+            onPageChange={setReportsPage}
+            showPagination={true}
           />
         </div>
       </div>

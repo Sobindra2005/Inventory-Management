@@ -4,7 +4,7 @@
  */
 
 import { httpClient } from './http-client';
-import type { DashboardData, LowStockResponse, GeneratedReport } from '../contracts/dashboard';
+import type { DashboardData, LowStockResponse, GeneratedReport, ReportsListResponse, ReportsQueryParams } from '../contracts/dashboard';
 
 export const dashboardApi = {
   /**
@@ -38,11 +38,11 @@ export const dashboardApi = {
   },
 
   /**
-   * Get list of generated reports
+   * Get list of generated reports with pagination
    */
-  fetchReports: async (limit: number = 10): Promise<GeneratedReport[]> => {
-    const response = await httpClient.get<GeneratedReport[]>('/api/v1/dashboard/reports', {
-      params: { limit },
+  fetchReports: async (params?: ReportsQueryParams): Promise<ReportsListResponse> => {
+    const response = await httpClient.get<ReportsListResponse>('/api/v1/dashboard/reports', {
+      params,
     });
     return response.data;
   },
