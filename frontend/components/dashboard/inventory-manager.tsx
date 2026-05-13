@@ -67,7 +67,12 @@ export const InventoryManager: React.FC = () => {
     }, [inventoryQuery.data?.data]);
 
     useEffect(() => {
+        const responsePage = inventoryQuery.data?.page;
         const totalPages = inventoryQuery.data?.totalPages ?? 0;
+
+        if (!inventoryQuery.isSuccess || responsePage !== page) {
+            return;
+        }
 
         if (totalPages === 0) {
             if (page !== 1) {
@@ -79,7 +84,7 @@ export const InventoryManager: React.FC = () => {
         if (page > totalPages) {
             setPage(totalPages);
         }
-    }, [inventoryQuery.data?.totalPages, page]);
+    }, [inventoryQuery.data?.page, inventoryQuery.data?.totalPages, inventoryQuery.isSuccess, page]);
 
     const categoryOptions = useMemo(() => {
         const categories = inventoryQuery.data?.categories ?? [];
@@ -91,8 +96,8 @@ export const InventoryManager: React.FC = () => {
 
     const totalItems = inventoryQuery.data?.totalItems ?? 0;
     const totalPages = inventoryQuery.data?.totalPages ?? 0;
-    const currentPage = inventoryQuery.data?.page ?? page;
-    const currentLimit = inventoryQuery.data?.limit ?? limit;
+    const currentPage = page;
+    const currentLimit = limit;
     const startItem = totalItems === 0 ? 0 : (currentPage - 1) * currentLimit + 1;
     const endItem = totalItems === 0 ? 0 : Math.min(currentPage * currentLimit, totalItems);
 
